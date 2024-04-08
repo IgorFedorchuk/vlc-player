@@ -9,6 +9,7 @@ import AVFoundation
 import AVKit
 import Foundation
 import MediaPlayer
+import VLCKitSPM
 
 open class PlayerVC: UIViewController {
     open var controlStackView: UIStackView = {
@@ -152,6 +153,8 @@ open class PlayerVC: UIViewController {
 
     private var isFullScreenMode = false
     private var isPlayControlHidden = false
+    open var mediaPlayer = VLCMediaPlayer()
+
     private var playerItem: AVPlayerItem?
     private var player: AVPlayer?
     private var playerLayer: AVPlayerLayer?
@@ -506,29 +509,39 @@ extension PlayerVC {
             return
         }
 
-        let asset = AVAsset(url: url)
-        let playerItem = AVPlayerItem(asset: asset, automaticallyLoadedAssetKeys: nil)
+        setupMediaPLayer(url: url)
 
-        player = pipModel?.player ?? AVPlayer(playerItem: playerItem)
-        self.playerItem = pipModel?.player.currentItem ?? playerItem
-        self.playerItem?.addObserver(self, forKeyPath: #keyPath(AVPlayerItem.status), options: [.old, .new], context: nil)
-        player?.addObserver(self, forKeyPath: #keyPath(AVPlayer.timeControlStatus), options: [.old, .new], context: nil)
-
-        let playerLayer = pipModel?.pipController.playerLayer ?? AVPlayerLayer(player: player)
-        playerLayer.frame = backVideoView.bounds
-        backVideoView.layer.addSublayer(playerLayer)
-        self.playerLayer?.removeFromSuperlayer()
-        self.playerLayer = playerLayer
-        setupVideoGravity()
-        if AVPictureInPictureController.isPictureInPictureSupported() {
-            pipController = AVPictureInPictureController(playerLayer: playerLayer)
-        }
-        player?.play()
-        setupPlayInBackground()
+//        let asset = AVAsset(url: url)
+//        let playerItem = AVPlayerItem(asset: asset, automaticallyLoadedAssetKeys: nil)
+//        
+//        player = pipModel?.player ?? AVPlayer(playerItem: playerItem)
+//        self.playerItem = pipModel?.player.currentItem ?? playerItem
+//        self.playerItem?.addObserver(self, forKeyPath: #keyPath(AVPlayerItem.status), options: [.old, .new], context: nil)
+//        player?.addObserver(self, forKeyPath: #keyPath(AVPlayer.timeControlStatus), options: [.old, .new], context: nil)
+//
+//        let playerLayer = pipModel?.pipController.playerLayer ?? AVPlayerLayer(player: player)
+//        playerLayer.frame = backVideoView.bounds
+//        backVideoView.layer.addSublayer(playerLayer)
+//        self.playerLayer?.removeFromSuperlayer()
+//        self.playerLayer = playerLayer
+//        setupVideoGravity()
+//        if AVPictureInPictureController.isPictureInPictureSupported() {
+//            pipController = AVPictureInPictureController(playerLayer: playerLayer)
+//        }
+//        player?.play()
+//        setupPlayInBackground()
         errorLabel.isHidden = true
         playPauseButton.setImage(UIImage(imageName: Constant.pauseImageName)?.withRenderingMode(.alwaysTemplate), for: .normal)
         pipModel = nil
         nameLabel.text = channels[currentIndex].name
+    }
+    
+    func setupMediaPLayer(url: URL) {
+        mediaPlayer.delegate = self
+        mediaPlayer.drawable = backVideoView
+        mediaPlayer.media = VLCMedia(url: url)
+        mediaPlayer.equalizerEnabled = true
+        mediaPlayer.play()
     }
 
     private func updateTopIndent(isLandscape: Bool) {
@@ -556,6 +569,14 @@ extension PlayerVC {
         commandCenter.pauseCommand.addTarget { [weak self] _ -> MPRemoteCommandHandlerStatus in
             self?.player?.pause()
             return MPRemoteCommandHandlerStatus.success
+        }
+    }
+}
+
+extension PlayerVC: VLCMediaPlayerDelegate {
+    public func mediaPlayerStateChanged(_ aNotification: Notification) {
+        if mediaPlayer.state == .stopped {
+            self.dismiss(animated: true, completion: nil)
         }
     }
 }
