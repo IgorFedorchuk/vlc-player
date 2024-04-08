@@ -16,7 +16,7 @@
 		774DCBDF2BC29AF800A50D7C /* PipService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 774DCBDE2BC29AF800A50D7C /* PipService.swift */; };
 		774DCBE12BC29B6700A50D7C /* PlayerVCExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 774DCBE02BC29B6700A50D7C /* PlayerVCExtension.swift */; };
 		774DCBE32BC29BDD00A50D7C /* UIViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 774DCBE22BC29BDD00A50D7C /* UIViewController.swift */; };
-		77B770D12BC469C5005D3E6B /* vlc-player in Frameworks */ = {isa = PBXBuildFile; productRef = 77B770D02BC469C5005D3E6B /* vlc-player */; };
+		77B770D92BC47A38005D3E6B /* vlc-player in Frameworks */ = {isa = PBXBuildFile; productRef = 77B770D82BC47A38005D3E6B /* vlc-player */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -31,6 +31,7 @@
 		774DCBDE2BC29AF800A50D7C /* PipService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PipService.swift; sourceTree = "<group>"; };
 		774DCBE02BC29B6700A50D7C /* PlayerVCExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerVCExtension.swift; sourceTree = "<group>"; };
 		774DCBE22BC29BDD00A50D7C /* UIViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIViewController.swift; sourceTree = "<group>"; };
+		77B770D62BC47A29005D3E6B /* vlc-player */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = "vlc-player"; path = ..; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -38,7 +39,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				77B770D12BC469C5005D3E6B /* vlc-player in Frameworks */,
+				77B770D92BC47A38005D3E6B /* vlc-player in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -48,8 +49,10 @@
 		774DCBAA2BC294EB00A50D7C = {
 			isa = PBXGroup;
 			children = (
+				77B770D62BC47A29005D3E6B /* vlc-player */,
 				774DCBB52BC294EB00A50D7C /* player */,
 				774DCBB42BC294EB00A50D7C /* Products */,
+				77B770D72BC47A38005D3E6B /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -78,6 +81,13 @@
 			path = player;
 			sourceTree = "<group>";
 		};
+		77B770D72BC47A38005D3E6B /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -95,7 +105,7 @@
 			);
 			name = player;
 			packageProductDependencies = (
-				77B770D02BC469C5005D3E6B /* vlc-player */,
+				77B770D82BC47A38005D3E6B /* vlc-player */,
 			);
 			productName = player;
 			productReference = 774DCBB32BC294EB00A50D7C /* player.app */;
@@ -126,7 +136,6 @@
 			);
 			mainGroup = 774DCBAA2BC294EB00A50D7C;
 			packageReferences = (
-				77B770CF2BC469C5005D3E6B /* XCRemoteSwiftPackageReference "vlc-player" */,
 			);
 			productRefGroup = 774DCBB42BC294EB00A50D7C /* Products */;
 			projectDirPath = "";
@@ -384,21 +393,9 @@
 		};
 /* End XCConfigurationList section */
 
-/* Begin XCRemoteSwiftPackageReference section */
-		77B770CF2BC469C5005D3E6B /* XCRemoteSwiftPackageReference "vlc-player" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/IgorFedorchuk/vlc-player.git";
-			requirement = {
-				branch = main;
-				kind = branch;
-			};
-		};
-/* End XCRemoteSwiftPackageReference section */
-
 /* Begin XCSwiftPackageProductDependency section */
-		77B770D02BC469C5005D3E6B /* vlc-player */ = {
+		77B770D82BC47A38005D3E6B /* vlc-player */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 77B770CF2BC469C5005D3E6B /* XCRemoteSwiftPackageReference "vlc-player" */;
 			productName = "vlc-player";
 		};
 /* End XCSwiftPackageProductDependency section */
