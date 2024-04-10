@@ -13,6 +13,7 @@ extension PlayerVC {
         let playerVC = PlayerVC(channels: channels, currentIndex: currentIndex, pipModel: pipModel)
         playerVC.modalPresentationStyle = .overFullScreen
         playerVC.needCloseOnPipPressed = true
+        playerVC.useVLCPlayer = false
         playerVC.onError = { url, error in
             let link = url.absoluteString
             let errorString = String(describing: error)

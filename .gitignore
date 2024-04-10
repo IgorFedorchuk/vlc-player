@@ -10,7 +10,7 @@
 *.xccheckout
 *.xcuserstate
 *com.mono0926*
-
+*.resolved
 #directories
 
 **/.build/*

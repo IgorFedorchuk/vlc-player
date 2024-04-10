@@ -5,15 +5,13 @@
 //  Created by Igor Fedorchuk on 07.04.2024.
 //
 
+import AVFoundation
 import UIKit
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
-
-
-
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        // Override point for customization after application launch.
+        setupAudioSession()
         return true
     }
 
@@ -31,6 +29,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // Use this method to release any resources that were specific to the discarded scenes, as they will not return.
     }
 
-
+    private func setupAudioSession() {
+        let audioSession = AVAudioSession.sharedInstance()
+        try? audioSession.setCategory(.playback, mode: .moviePlayback, options: [])
+        try? audioSession.setActive(true)
+    }
 }
 

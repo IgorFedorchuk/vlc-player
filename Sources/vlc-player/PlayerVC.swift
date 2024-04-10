@@ -146,14 +146,17 @@ open class PlayerVC: UIViewController {
 
     open var errorText = ""
     open var needCloseOnPipPressed = false
-
+    open var useVLCPlayer = false
+    
     public var onViewDidLoad: (() -> Void)?
     public var onError: ((URL, Error?) -> Void)?
     public var onPipStarted: ((PipModel, [PlayerVC.Channel], Int) -> Void)?
 
     private var isFullScreenMode = false
     private var isPlayControlHidden = false
-    open var mediaPlayer = VLCMediaPlayer()
+    private var isAvPlayerStoppedWithError = false
+
+    open var vlcPlayer = VLCMediaPlayer()
 
     private var playerItem: AVPlayerItem?
     private var player: AVPlayer?
@@ -239,12 +242,17 @@ open class PlayerVC: UIViewController {
                 guard let self else { return }
                 if newStatus == .playing || newStatus == .paused {
                     loader.stopAnimating()
+                    if newStatus == .playing && playerLayer?.videoRect == CGRectZero {
+                        isAvPlayerStoppedWithError = true
+                        setupPlayer()
+                    }
                 } else {
                     loader.startAnimating()
                 }
             }
         } else if let playerItem = object as? AVPlayerItem, keyPath == #keyPath(AVPlayerItem.status), playerItem.status == .failed {
-            proccessError()
+            isAvPlayerStoppedWithError = true
+            setupPlayer()
         }
     }
 }
@@ -288,17 +296,36 @@ extension PlayerVC {
             setupPlayer()
             return
         }
-        let imageName: String
-        if player?.rate == 0 {
-            player?.play()
-            imageName = Constant.pauseImageName
+        
+        if useVLCPlayer || isAvPlayerStoppedWithError {
+            let isPlaying = vlcPlayer.isPlaying
+            setupPlayPauseImage(isPlaying)
+            if isPlaying {
+                vlcPlayer.pause()
+            } else {
+                vlcPlayer.play()
+            }
         } else {
-            player?.pause()
+            let isPlaying = player?.rate != 0
+            setupPlayPauseImage(isPlaying)
+            if player?.rate == 0 {
+                player?.play()
+            } else {
+                player?.pause()
+            }
+        }
+    }
+
+    private func setupPlayPauseImage(_ isPlaying: Bool) {
+        let imageName: String
+        if isPlaying {
             imageName = Constant.playImageName
+        } else {
+            imageName = Constant.pauseImageName
         }
         playPauseButton.setImage(UIImage(imageName: imageName)?.withRenderingMode(.alwaysTemplate), for: .normal)
     }
-
+    
     private func setupPlayAirplayButton() {
         controlStackView.addArrangedSubview(airplayButton)
         airplayButton.widthAnchor.constraint(equalToConstant: Constant.buttonWidth).isActive = true
@@ -339,10 +366,16 @@ extension PlayerVC {
     }
 
     private func setupSoundButtonImage() {
-        let player = player ?? pipModel?.player
-        guard let player = player else { return }
-        let imageName = player.volume == 0 ? Constant.soundOffImageName : Constant.soundOnImageName
-        soundButton.setImage(UIImage(imageName: imageName)?.withRenderingMode(.alwaysTemplate), for: .normal)
+        if useVLCPlayer || isAvPlayerStoppedWithError {
+            guard let auduo =  vlcPlayer.audio else { return }
+            let imageName = auduo.isMuted ? Constant.soundOffImageName : Constant.soundOnImageName
+            soundButton.setImage(UIImage(imageName: imageName)?.withRenderingMode(.alwaysTemplate), for: .normal)
+        } else {
+            let player = player ?? pipModel?.player
+            guard let player = player else { return }
+            let imageName = player.volume == 0 ? Constant.soundOffImageName : Constant.soundOnImageName
+            soundButton.setImage(UIImage(imageName: imageName)?.withRenderingMode(.alwaysTemplate), for: .normal)
+        }
     }
 
     private func setupSoundButton() {
@@ -358,6 +391,9 @@ extension PlayerVC {
     @objc private func soundButtonPressed() {
         startTimer()
         player?.volume = player?.volume == 0 ? 1 : 0
+        if let auduo = vlcPlayer.audio {
+            auduo.isMuted = !auduo.isMuted
+        }
         setupSoundButtonImage()
     }
 
@@ -423,6 +459,7 @@ extension PlayerVC {
         let nextIndex = currentIndex + 1
         if nextIndex < channels.count {
             currentIndex = nextIndex
+            isAvPlayerStoppedWithError = false
             setupPlayer()
         }
         setupPlayBackForwardButtonColor()
@@ -433,6 +470,7 @@ extension PlayerVC {
         let nextIndex = currentIndex - 1
         if nextIndex >= 0, nextIndex < channels.count {
             currentIndex = nextIndex
+            isAvPlayerStoppedWithError = false
             setupPlayer()
         }
         setupPlayBackForwardButtonColor()
@@ -499,7 +537,27 @@ extension PlayerVC {
     }
 
     private func setupVideoGravity() {
-        playerLayer?.videoGravity = isFullScreenMode ? .resizeAspectFill : .resizeAspect
+        if useVLCPlayer || isAvPlayerStoppedWithError {
+            vlcPlayer.videoAspectRatio = nil
+            let screenSize = backVideoView.bounds.size
+            let videoSize = vlcPlayer.videoSize
+            if isFullScreenMode && screenSize.height > 0 && screenSize.width > 0 && videoSize.height > 0 && videoSize.width > 0 {
+                let ar = videoSize.width / videoSize.height
+                let dar = screenSize.width / screenSize.height
+
+                let scale: CGFloat
+                if dar >= ar {
+                    scale = screenSize.width / videoSize.width
+                } else {
+                    scale = screenSize.height / videoSize.height
+                }
+                vlcPlayer.scaleFactor = Float(scale * UIScreen.main.scale)
+            } else {
+                vlcPlayer.scaleFactor = 0
+            }
+        } else {
+            playerLayer?.videoGravity = isFullScreenMode ? .resizeAspectFill : .resizeAspect
+        }
     }
 
     private func setupPlayer() {
@@ -509,39 +567,47 @@ extension PlayerVC {
             return
         }
 
-        setupMediaPLayer(url: url)
-
-//        let asset = AVAsset(url: url)
-//        let playerItem = AVPlayerItem(asset: asset, automaticallyLoadedAssetKeys: nil)
-//        
-//        player = pipModel?.player ?? AVPlayer(playerItem: playerItem)
-//        self.playerItem = pipModel?.player.currentItem ?? playerItem
-//        self.playerItem?.addObserver(self, forKeyPath: #keyPath(AVPlayerItem.status), options: [.old, .new], context: nil)
-//        player?.addObserver(self, forKeyPath: #keyPath(AVPlayer.timeControlStatus), options: [.old, .new], context: nil)
-//
-//        let playerLayer = pipModel?.pipController.playerLayer ?? AVPlayerLayer(player: player)
-//        playerLayer.frame = backVideoView.bounds
-//        backVideoView.layer.addSublayer(playerLayer)
-//        self.playerLayer?.removeFromSuperlayer()
-//        self.playerLayer = playerLayer
-//        setupVideoGravity()
-//        if AVPictureInPictureController.isPictureInPictureSupported() {
-//            pipController = AVPictureInPictureController(playerLayer: playerLayer)
-//        }
-//        player?.play()
-//        setupPlayInBackground()
+        if useVLCPlayer || isAvPlayerStoppedWithError {
+            pipButton.isEnabled = false
+            playerLayer?.removeFromSuperlayer()
+            player?.pause()
+            player = nil
+            setupVLCMediaPLayer(url: url)
+        } else {
+            pipButton.isEnabled = true
+            vlcPlayer.stop()
+            vlcPlayer.drawable = nil
+            let asset = AVAsset(url: url)
+            let playerItem = AVPlayerItem(asset: asset, automaticallyLoadedAssetKeys: nil)
+            
+            player = pipModel?.player ?? AVPlayer(playerItem: playerItem)
+            self.playerItem = pipModel?.player.currentItem ?? playerItem
+            self.playerItem?.addObserver(self, forKeyPath: #keyPath(AVPlayerItem.status), options: [.old, .new], context: nil)
+            player?.addObserver(self, forKeyPath: #keyPath(AVPlayer.timeControlStatus), options: [.old, .new], context: nil)
+            let playerLayer = pipModel?.pipController.playerLayer ?? AVPlayerLayer(player: player)
+            playerLayer.frame = backVideoView.bounds
+            backVideoView.layer.addSublayer(playerLayer)
+            self.playerLayer?.removeFromSuperlayer()
+            self.playerLayer = playerLayer
+            setupVideoGravity()
+            if AVPictureInPictureController.isPictureInPictureSupported() {
+                pipController = AVPictureInPictureController(playerLayer: playerLayer)
+            }
+            player?.play()
+            setupPlayInBackground()
+        }
+        
         errorLabel.isHidden = true
         playPauseButton.setImage(UIImage(imageName: Constant.pauseImageName)?.withRenderingMode(.alwaysTemplate), for: .normal)
         pipModel = nil
         nameLabel.text = channels[currentIndex].name
     }
     
-    func setupMediaPLayer(url: URL) {
-        mediaPlayer.delegate = self
-        mediaPlayer.drawable = backVideoView
-        mediaPlayer.media = VLCMedia(url: url)
-        mediaPlayer.equalizerEnabled = true
-        mediaPlayer.play()
+    private func setupVLCMediaPLayer(url: URL) {
+        vlcPlayer.delegate = self
+        vlcPlayer.drawable = backVideoView
+        vlcPlayer.media = VLCMedia(url: url)
+        vlcPlayer.play()
     }
 
     private func updateTopIndent(isLandscape: Bool) {
@@ -575,8 +641,11 @@ extension PlayerVC {
 
 extension PlayerVC: VLCMediaPlayerDelegate {
     public func mediaPlayerStateChanged(_ aNotification: Notification) {
-        if mediaPlayer.state == .stopped {
-            self.dismiss(animated: true, completion: nil)
+        switch vlcPlayer.state {
+        case .opening:
+            loader.startAnimating()
+        default:
+            loader.stopAnimating()
         }
     }
 }
