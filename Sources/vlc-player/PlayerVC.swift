@@ -43,6 +43,15 @@ open class PlayerVC: UIViewController {
     open var volumeTrailingConstraint: NSLayoutConstraint?
     open var brightnessLeadingConstraint: NSLayoutConstraint?
     
+    open var volumeStackView: UIStackView = {
+        let view = UIStackView(frame: CGRect.zero)
+        view.backgroundColor = .clear
+        view.spacing = 10
+        view.transform = CGAffineTransform(rotationAngle: .pi / -2)
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
+    }()
+    
     open var volumeSlider: UISlider = {
         let slider = UISlider(frame: CGRect.zero)
         slider.tintColor = UIColor.white
@@ -53,9 +62,17 @@ open class PlayerVC: UIViewController {
         slider.value = AVAudioSession.sharedInstance().outputVolume
         slider.minimumValue = 0.0
         slider.maximumValue = 1.0
-        slider.setThumbImage(UIImage(imageName: "volume")?.withRenderingMode(.alwaysTemplate), for: .normal)
-        slider.transform = CGAffineTransform(rotationAngle: .pi / -2)
+        slider.thumbTintColor = .white
         return slider
+    }()
+    
+    open var brightnessStackView: UIStackView = {
+        let view = UIStackView(frame: CGRect.zero)
+        view.backgroundColor = .clear
+        view.spacing = 10
+        view.transform = CGAffineTransform(rotationAngle: .pi / -2)
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
     }()
     
     open var brightnessSlider: UISlider = {
@@ -67,9 +84,8 @@ open class PlayerVC: UIViewController {
         slider.translatesAutoresizingMaskIntoConstraints = false
         slider.minimumValue = 0.0
         slider.maximumValue = 1.0
-        slider.setThumbImage(UIImage(imageName: "brightness")?.withRenderingMode(.alwaysTemplate), for: .normal)
+        slider.thumbTintColor = .white
         slider.value = Float(UIScreen.main.brightness)
-        slider.transform = CGAffineTransform(rotationAngle: .pi / -2)
         return slider
     }()
     
@@ -673,12 +689,21 @@ extension PlayerVC {
     
     private func setupBrightnessSlider() {
         brightnessSlider.addTarget(self, action: #selector(brightnessSliderValueDidChange(_:)), for: .valueChanged)
-        playControlView.addSubview(brightnessSlider)
-        brightnessSlider.centerYAnchor.constraint(equalTo: playControlView.centerYAnchor, constant: 0).isActive = true
+        brightnessStackView.addArrangedSubview(brightnessSlider)
+        playControlView.addSubview(brightnessStackView)
+        brightnessSlider.widthAnchor.constraint(equalToConstant: 250).isActive = true
+        brightnessSlider.heightAnchor.constraint(equalToConstant: 40).isActive = true
+        brightnessStackView.centerYAnchor.constraint(equalTo: playControlView.centerYAnchor, constant: 0).isActive = true
         brightnessLeadingConstraint = brightnessSlider.leadingAnchor.constraint(equalTo: playControlView.leadingAnchor, constant: -Constant.sliderIndentPortrait)
         brightnessLeadingConstraint?.isActive = true
-        brightnessSlider.widthAnchor.constraint(equalToConstant: 250).isActive = true
-        brightnessSlider.heightAnchor.constraint(equalToConstant: 30).isActive = true
+        
+        let imageView = UIImageView(frame: .zero)
+        imageView.tintColor = .white
+        imageView.image = UIImage(imageName: "brightness")?.withRenderingMode(.alwaysTemplate)
+        imageView.transform = CGAffineTransformMakeRotation(Double.pi / 2);
+        brightnessStackView.addArrangedSubview(imageView)
+        imageView.widthAnchor.constraint(equalToConstant: 16).isActive = true
+        imageView.heightAnchor.constraint(equalToConstant: 16).isActive = true
     }
        
    @objc private func brightnessSliderValueDidChange(_ sender: UISlider) {
@@ -687,12 +712,21 @@ extension PlayerVC {
     
     private func setupVolumeSlider() {
         volumeSlider.addTarget(self, action: #selector(volumeSliderValueDidChange(_:)), for: .valueChanged)
-        playControlView.addSubview(volumeSlider)
-        volumeSlider.centerYAnchor.constraint(equalTo: playControlView.centerYAnchor, constant: 0).isActive = true
-        volumeTrailingConstraint = volumeSlider.trailingAnchor.constraint(equalTo: playControlView.trailingAnchor, constant: Constant.sliderIndentPortrait)
-        volumeTrailingConstraint?.isActive = true
+        volumeStackView.addArrangedSubview(volumeSlider)
+        playControlView.addSubview(volumeStackView)
         volumeSlider.widthAnchor.constraint(equalToConstant: 250).isActive = true
-        volumeSlider.heightAnchor.constraint(equalToConstant: 30).isActive = true
+        volumeSlider.heightAnchor.constraint(equalToConstant: 40).isActive = true
+        volumeStackView.centerYAnchor.constraint(equalTo: playControlView.centerYAnchor, constant: 0).isActive = true
+        volumeTrailingConstraint = volumeStackView.trailingAnchor.constraint(equalTo: playControlView.trailingAnchor, constant: Constant.sliderIndentPortrait)
+        volumeTrailingConstraint?.isActive = true
+        
+        let imageView = UIImageView(frame: .zero)
+        imageView.tintColor = .white
+        imageView.image = UIImage(imageName: "volume")?.withRenderingMode(.alwaysTemplate)
+        imageView.transform = CGAffineTransformMakeRotation(Double.pi / 2);
+        volumeStackView.addArrangedSubview(imageView)
+        imageView.widthAnchor.constraint(equalToConstant: 16).isActive = true
+        imageView.heightAnchor.constraint(equalToConstant: 16).isActive = true
     }
     
     private func subscribeToNotifications() {
