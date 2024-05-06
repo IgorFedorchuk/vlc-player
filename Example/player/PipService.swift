@@ -22,11 +22,20 @@ final class PipService: NSObject, IPipService {
     
     private var pipModel: PipModel?
     private var channels: ([PlayerVC.Channel], Int)?
+    private var pauseTimer: Timer?
 
     func set(pipModel: PipModel, channels: ([PlayerVC.Channel], Int)) {
         self.pipModel = pipModel
         self.channels = channels
         pipModel.pipController.delegate = self
+        
+        invalidatePauseTimer()
+        if let pauseTimeInterval = pipModel.pauseTimeInterval {
+            pauseTimer = Timer.scheduledTimer(withTimeInterval: pauseTimeInterval, repeats: false) { [weak self] _ in
+                pipModel.player.pause()
+                self?.invalidatePauseTimer()
+            }
+        }
     }
 
     func playIfInPipMode(url: URL, channels: ([PlayerVC.Channel], Int)) -> Bool {
@@ -50,12 +59,13 @@ extension PipService: AVPictureInPictureControllerDelegate {
 
     func pictureInPictureController(_: AVPictureInPictureController,
                                     restoreUserInterfaceForPictureInPictureStopWithCompletionHandler completionHandler: @escaping (Bool) -> Void) {
-        guard let pipModel = pipModel,
+        guard var pipModel = pipModel,
               let channels = channels else {
             completionHandler(false)
             return
         }
         
+        pipModel.pauseTimeInterval = pauseTimer?.fireDate.timeIntervalSince(Date())
         let playerVC = PlayerVC.create(channels: channels.0, currentIndex: channels.1, pipModel: pipModel)
         UIViewController.topViewController()?.present(playerVC, animated: false) {
             self.clear(needToPause: false)
@@ -69,6 +79,12 @@ extension PipService {
         if needToPause {
             pipModel?.player.pause()
         }
+        invalidatePauseTimer()
         pipModel = nil
+    }
+    
+    private func invalidatePauseTimer() {
+        pauseTimer?.invalidate()
+        pauseTimer = nil
     }
 }
