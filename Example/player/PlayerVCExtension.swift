@@ -15,6 +15,7 @@ extension PlayerVC {
         playerVC.needCloseOnPipPressed = true
         playerVC.useVLCPlayer = true
         playerVC.needShowFavoriteButton = true
+        playerVC.needShowLockOrientationButton = true
         playerVC.onFavoritePressed = { channel in
             return true
         }

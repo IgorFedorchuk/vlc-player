@@ -224,6 +224,7 @@ open class PlayerVC: UIViewController {
     open var needCloseOnPipPressed = false
     open var useVLCPlayer = true
     open var needShowFavoriteButton = false
+    open var needShowLockOrientationButton = true
     open var isRotationLocked = false
     open var lockedOrientations = UIInterfaceOrientationMask.allButUpsideDown
 
@@ -595,10 +596,12 @@ extension PlayerVC {
     }
     
     private func setupLockOrientationButton() {
-        lockOrientationButton.tintColor = isRotationLocked ? constant.buttonActiveTintColor : .white
-        lockOrientationButton.addTarget(self, action: #selector(lockOrientationButtonPressed), for: .touchUpInside)
-        controlStackView.addArrangedSubview(lockOrientationButton)
-        lockOrientationButton.widthAnchor.constraint(equalToConstant: constant.buttonWidth).isActive = true
+        if needShowLockOrientationButton {
+            lockOrientationButton.tintColor = isRotationLocked ? constant.buttonActiveTintColor : .white
+            lockOrientationButton.addTarget(self, action: #selector(lockOrientationButtonPressed), for: .touchUpInside)
+            controlStackView.addArrangedSubview(lockOrientationButton)
+            lockOrientationButton.widthAnchor.constraint(equalToConstant: constant.buttonWidth).isActive = true
+        }
     }
     
     @objc private func lockOrientationButtonPressed() {
