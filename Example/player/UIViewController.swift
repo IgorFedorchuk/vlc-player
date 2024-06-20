@@ -9,7 +9,8 @@ import UIKit
 
 extension UIViewController {
     class func topViewController(_ base: UIViewController? =
-                                 UIApplication.shared.windows.filter{$0.isKeyWindow}.first?.rootViewController) -> UIViewController? {
+        UIApplication.shared.windows.filter { $0.isKeyWindow }.first?.rootViewController) -> UIViewController?
+    {
         if let nav = base as? UINavigationController {
             return topViewController(nav.visibleViewController)
         }
