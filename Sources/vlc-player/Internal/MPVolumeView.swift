@@ -1,6 +1,6 @@
 //
 //  MPVolumeView.swift
-//  
+//
 //
 //  Created by Igor Fedorchuk on 18.04.2024.
 //

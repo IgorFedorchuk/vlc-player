@@ -52,7 +52,7 @@ open class PlayerVC: UIViewController {
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
     }()
-    
+
     open var volumeSlider: UISlider = {
         let slider = UISlider(frame: CGRect.zero)
         slider.tintColor = UIColor.white
@@ -66,7 +66,7 @@ open class PlayerVC: UIViewController {
         slider.thumbTintColor = .white
         return slider
     }()
-    
+
     open var brightnessStackView: UIStackView = {
         let view = UIStackView(frame: CGRect.zero)
         view.backgroundColor = .clear
@@ -75,7 +75,7 @@ open class PlayerVC: UIViewController {
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
     }()
-    
+
     open var brightnessSlider: UISlider = {
         let slider = UISlider(frame: CGRect.zero)
         slider.tintColor = UIColor.white
@@ -89,7 +89,7 @@ open class PlayerVC: UIViewController {
         slider.value = Float(UIScreen.main.brightness)
         return slider
     }()
-    
+
     open var closeButton: UIButton = {
         let button = UIButton(frame: CGRect.zero)
         button.backgroundColor = .clear
@@ -143,36 +143,36 @@ open class PlayerVC: UIViewController {
         button.translatesAutoresizingMaskIntoConstraints = false
         return button
     }()
-    
+
     open var pauseTimerButton: UIButton = {
         let button = UIButton(frame: CGRect.zero)
         button.backgroundColor = .clear
         button.tintColor = .white
         button.setImage(UIImage(imageName: "timer")?.withRenderingMode(.alwaysTemplate), for: .normal)
         let inset = CGFloat(8)
-        button.imageEdgeInsets = UIEdgeInsets(top:inset, left: inset, bottom: inset, right: inset)
+        button.imageEdgeInsets = UIEdgeInsets(top: inset, left: inset, bottom: inset, right: inset)
         button.translatesAutoresizingMaskIntoConstraints = false
         return button
     }()
-    
+
     open var favoriteButton: UIButton = {
         let button = UIButton(frame: CGRect.zero)
         button.backgroundColor = .clear
         button.tintColor = .white
         button.setImage(UIImage(imageName: "favorite")?.withRenderingMode(.alwaysTemplate), for: .normal)
         let inset = CGFloat(8)
-        button.imageEdgeInsets = UIEdgeInsets(top:inset, left: inset, bottom: inset, right: inset)
+        button.imageEdgeInsets = UIEdgeInsets(top: inset, left: inset, bottom: inset, right: inset)
         button.translatesAutoresizingMaskIntoConstraints = false
         return button
     }()
-    
+
     open var lockOrientationButton: UIButton = {
         let button = UIButton(frame: CGRect.zero)
         button.backgroundColor = .clear
         button.tintColor = .white
         button.setImage(UIImage(imageName: "lock-orientation")?.withRenderingMode(.alwaysTemplate), for: .normal)
         let inset = CGFloat(8)
-        button.imageEdgeInsets = UIEdgeInsets(top:inset, left: inset, bottom: inset, right: inset)
+        button.imageEdgeInsets = UIEdgeInsets(top: inset, left: inset, bottom: inset, right: inset)
         button.translatesAutoresizingMaskIntoConstraints = false
         return button
     }()
@@ -221,8 +221,21 @@ open class PlayerVC: UIViewController {
         return label
     }()
 
+    open var progressBarSlider: UISlider = {
+        let slider = UISlider(frame: CGRect.zero)
+        slider.tintColor = UIColor.white
+        slider.backgroundColor = .clear
+        slider.minimumTrackTintColor = UIColor.white
+        slider.maximumTrackTintColor = UIColor.color(r: 255, g: 255, b: 255, a: 0.4)
+        slider.translatesAutoresizingMaskIntoConstraints = false
+        slider.minimumValue = 0.0
+        slider.maximumValue = 1.0
+        slider.value = 0
+        slider.setThumbImage(UIImage(imageName: "vertical-line")?.withRenderingMode(UIImage.RenderingMode.alwaysTemplate), for: UIControl.State.normal)
+        return slider
+    }()
+
     open var needCloseOnPipPressed = false
-    open var useVLCPlayer = true
     open var needShowFavoriteButton = false
     open var needShowLockOrientationButton = true
     open var isRotationLocked = false
@@ -249,12 +262,13 @@ open class PlayerVC: UIViewController {
     private var pipController: AVPictureInPictureController?
     private var pipModel: PipModel?
     private var pauseTimer: Timer?
+    private var timeObserver: Timer?
 
     private var hideControlsTimer: Timer?
     private var channels: [PlayerVC.Channel]
     private var currentIndex: Int
     private var isObservingPlayer = false
-    
+
     open var windowInterfaceOrientation: UIInterfaceOrientation? {
         if #available(iOS 13.0, *) {
             return UIApplication.shared.windows.first?.windowScene?.interfaceOrientation
@@ -273,6 +287,7 @@ open class PlayerVC: UIViewController {
     deinit {
         invalidatePauseTimer()
         invalidateHideControlsTimer()
+        removePeriodicTimeObserver()
     }
 
     @available(*, unavailable)
@@ -304,16 +319,17 @@ open class PlayerVC: UIViewController {
         setupPlayer()
     }
 
-    open override func viewWillDisappear(_ animated: Bool) {
+    override open func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         removePlayerObservers()
+        removePeriodicTimeObserver()
     }
-    
+
     override open var supportedInterfaceOrientations: UIInterfaceOrientationMask {
         return lockedOrientations
     }
 
-    open override var preferredInterfaceOrientationForPresentation: UIInterfaceOrientation {
+    override open var preferredInterfaceOrientationForPresentation: UIInterfaceOrientation {
         switch lockedOrientations {
         case .portrait:
             return .portrait
@@ -327,7 +343,7 @@ open class PlayerVC: UIViewController {
             return .portrait
         }
     }
-    
+
     override open var shouldAutorotate: Bool {
         return !isRotationLocked
     }
@@ -345,14 +361,15 @@ open class PlayerVC: UIViewController {
 
     override open func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey: Any]?, context _: UnsafeMutableRawPointer?) {
         if keyPath == #keyPath(AVPlayer.timeControlStatus), let change = change,
-           let newValue = change[NSKeyValueChangeKey.newKey] as? Int {
+           let newValue = change[NSKeyValueChangeKey.newKey] as? Int
+        {
             let newStatus = AVPlayer.TimeControlStatus(rawValue: newValue)
 
             DispatchQueue.main.async { [weak self] in
                 guard let self else { return }
                 if newStatus == .playing || newStatus == .paused {
                     loader.stopAnimating()
-                    if newStatus == .playing && playerLayer?.videoRect == CGRectZero && useVLCPlayer {
+                    if newStatus == .playing && playerLayer?.videoRect == CGRectZero {
                         isAvPlayerStoppedWithError = true
                         setupPlayer()
                     }
@@ -361,15 +378,15 @@ open class PlayerVC: UIViewController {
                 }
             }
         } else if let playerItem = object as? AVPlayerItem, keyPath == #keyPath(AVPlayerItem.status), playerItem.status == .failed {
-            if useVLCPlayer {
-                isAvPlayerStoppedWithError = true
-                setupPlayer()
-            } else {
-                proccessError()
-            }
+            isAvPlayerStoppedWithError = true
+            setupPlayer()
         } else if keyPath == #keyPath(AVAudioSession.outputVolume) {
             updateBrighnessAndVolume()
         }
+    }
+
+    open func startPlayer() {
+        setupPlayer()
     }
 }
 
@@ -389,7 +406,7 @@ extension PlayerVC {
         AVAudioSession.sharedInstance().removeObserver(self, forKeyPath: #keyPath(AVAudioSession.outputVolume))
         isObservingPlayer = false
     }
-    
+
     private func proccessError() {
         errorLabel.text = constant.errorText
         errorLabel.isHidden = false
@@ -430,8 +447,8 @@ extension PlayerVC {
             setupPlayer()
             return
         }
-        
-        if useVLCPlayer && isAvPlayerStoppedWithError {
+
+        if isAvPlayerStoppedWithError {
             let isPlaying = vlcPlayer.isPlaying
             setupPlayPauseImage(isPlaying)
             if isPlaying {
@@ -459,13 +476,13 @@ extension PlayerVC {
         }
         playPauseButton.setImage(UIImage(imageName: imageName)?.withRenderingMode(.alwaysTemplate), for: .normal)
     }
-    
+
     private func setupPauseTimerButton() {
         pauseTimerButton.addTarget(self, action: #selector(pauseTimerButtonPressed), for: .touchUpInside)
         controlStackView.addArrangedSubview(pauseTimerButton)
         pauseTimerButton.widthAnchor.constraint(equalToConstant: constant.buttonWidth).isActive = true
     }
-    
+
     @objc private func pauseTimerButtonPressed() {
         if let pauseTimer {
             let remainingTimeInterval = pauseTimer.fireDate.timeIntervalSince(Date())
@@ -474,7 +491,7 @@ extension PlayerVC {
             showPauseTimer()
         }
     }
-    
+
     private func showPauseTimer(_ seconds: Int) {
         var remainingSeconds = seconds
 
@@ -496,20 +513,20 @@ extension PlayerVC {
             self?.invalidatePauseTimer()
         }))
 
-        self.present(alert, animated: true, completion: nil)
+        present(alert, animated: true, completion: nil)
     }
-    
+
     private func countDownPauseTimerTitle(seconds: Int) -> String {
-         return "\(constant.timerTitle)\n\(formatTime(seconds: seconds))"
+        return "\(constant.timerTitle)\n\(formatTime(seconds: seconds))"
     }
-    
+
     private func formatTime(seconds: Int) -> String {
         let hours = seconds / 3600
         let minutes = (seconds % 3600) / 60
         let remainingSeconds = seconds % 60
         return String(format: "%02d:%02d:%02d", hours, minutes, remainingSeconds)
     }
-    
+
     private func schedulePauseTimer(timeInterval: TimeInterval) {
         invalidatePauseTimer()
         pauseTimerButton.tintColor = constant.buttonActiveTintColor
@@ -520,7 +537,7 @@ extension PlayerVC {
             self?.invalidatePauseTimer()
         }
     }
-    
+
     private func showPauseTimer() {
         let alert = UIAlertController(title: constant.timerTitle, message: nil, preferredStyle: .alert)
         alert.view.tintColor = UIColor.black
@@ -529,53 +546,53 @@ extension PlayerVC {
         datePicker.datePickerMode = .countDownTimer
         datePicker.countDownDuration = TimeInterval(constant.defaultCountDownDuration)
         datePicker.translatesAutoresizingMaskIntoConstraints = false
-        
+
         let containerView = UIView()
         containerView.addSubview(datePicker)
         containerView.translatesAutoresizingMaskIntoConstraints = false
-        
+
         let width: CGFloat = 270
         NSLayoutConstraint.activate([
             datePicker.centerXAnchor.constraint(equalTo: containerView.centerXAnchor),
             datePicker.topAnchor.constraint(equalTo: containerView.topAnchor),
             datePicker.bottomAnchor.constraint(equalTo: containerView.bottomAnchor),
-            datePicker.widthAnchor.constraint(equalToConstant: width)
+            datePicker.widthAnchor.constraint(equalToConstant: width),
         ])
-        
+
         let containerHeight: CGFloat = 150
         containerView.heightAnchor.constraint(equalToConstant: containerHeight).isActive = true
         containerView.widthAnchor.constraint(equalToConstant: width).isActive = true
-        
+
         alert.view.addSubview(containerView)
         alert.view.translatesAutoresizingMaskIntoConstraints = false
-        
+
         NSLayoutConstraint.activate([
             containerView.topAnchor.constraint(equalTo: alert.view.topAnchor, constant: 50),
             containerView.centerXAnchor.constraint(equalTo: alert.view.centerXAnchor),
-            containerView.bottomAnchor.constraint(equalTo: alert.view.bottomAnchor, constant: -50)
+            containerView.bottomAnchor.constraint(equalTo: alert.view.bottomAnchor, constant: -50),
         ])
-        
+
         alert.addAction(UIAlertAction(title: constant.timerCancelButtonText, style: .cancel, handler: nil))
         alert.addAction(UIAlertAction(title: constant.timerOkButtonText, style: .default, handler: { [weak self] _ in
             self?.schedulePauseTimer(timeInterval: datePicker.countDownDuration)
         }))
-        
+
         let height = NSLayoutConstraint(item: alert.view!, attribute: .height, relatedBy: .equal, toItem: nil, attribute: .notAnAttribute, multiplier: 1, constant: containerHeight + 150)
         alert.view.addConstraint(height)
-        self.present(alert, animated: true, completion: nil)
+        present(alert, animated: true, completion: nil)
     }
-    
+
     private func invalidatePauseTimer() {
         pauseTimer?.invalidate()
         pauseTimer = nil
         pauseTimerButton.tintColor = .white
     }
-    
+
     private func setupPlayAirplayButton() {
         controlStackView.addArrangedSubview(airplayButton)
         airplayButton.widthAnchor.constraint(equalToConstant: constant.buttonWidth).isActive = true
     }
-    
+
     private func setupFavoriteButton() {
         setFavoriteButtonColor(channels[currentIndex].isFavorite)
         favoriteButton.addTarget(self, action: #selector(favoriteButtonPressed), for: .touchUpInside)
@@ -590,11 +607,11 @@ extension PlayerVC {
         channels[currentIndex].isFavorite = isFavorite
         setFavoriteButtonColor(isFavorite)
     }
-    
+
     private func setFavoriteButtonColor(_ isFavorite: Bool) {
         favoriteButton.tintColor = isFavorite ? constant.buttonActiveTintColor : .white
     }
-    
+
     private func setupLockOrientationButton() {
         if needShowLockOrientationButton {
             lockOrientationButton.tintColor = isRotationLocked ? constant.buttonActiveTintColor : .white
@@ -603,7 +620,7 @@ extension PlayerVC {
             lockOrientationButton.widthAnchor.constraint(equalToConstant: constant.buttonWidth).isActive = true
         }
     }
-    
+
     @objc private func lockOrientationButtonPressed() {
         isRotationLocked = !isRotationLocked
         lockOrientationButton.tintColor = isRotationLocked ? constant.buttonActiveTintColor : .white
@@ -627,12 +644,12 @@ extension PlayerVC {
         } else {
             lockedOrientations = UIInterfaceOrientationMask.allButUpsideDown
         }
-        
+
         if #available(iOS 16.0, *) {
             setNeedsUpdateOfSupportedInterfaceOrientations()
         }
     }
-    
+
     private func setupPlayPipButton() {
         pipButton.addTarget(self, action: #selector(playPipButtonPressed), for: .touchUpInside)
         if AVPictureInPictureController.isPictureInPictureSupported() {
@@ -668,8 +685,8 @@ extension PlayerVC {
     }
 
     private func setupSoundButtonImage() {
-        if useVLCPlayer && isAvPlayerStoppedWithError {
-            guard let auduo =  vlcPlayer.audio else { return }
+        if isAvPlayerStoppedWithError {
+            guard let auduo = vlcPlayer.audio else { return }
             let imageName = auduo.isMuted ? constant.soundOffImageName : constant.soundOnImageName
             soundButton.setImage(UIImage(imageName: imageName)?.withRenderingMode(.alwaysTemplate), for: .normal)
         } else {
@@ -822,9 +839,9 @@ extension PlayerVC {
         view.addSubview(loader)
         loader.startAnimating()
         loader.centerXAnchor.constraint(equalTo: view.centerXAnchor, constant: 0).isActive = true
-        loader.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -90).isActive = true
+        loader.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -120).isActive = true
     }
-    
+
     private func recreateBackVideoView() {
         backVideoView.removeFromSuperview()
         backVideoView = UIView(frame: CGRect.zero)
@@ -855,14 +872,59 @@ extension PlayerVC {
         setupNameLabel()
         setupBrightnessSlider()
         setupVolumeSlider()
+        setupProgressBarSlider()
+    }
+
+    private func setupProgressBarSlider() {
+        progressBarSlider.addTarget(self, action: #selector(progressBarSliderValueDidChange(_:)), for: .valueChanged)
+        playControlView.addSubview(progressBarSlider)
+        progressBarSlider.leadingAnchor.constraint(equalTo: playControlView.leadingAnchor, constant: 8).isActive = true
+        progressBarSlider.trailingAnchor.constraint(equalTo: playControlView.trailingAnchor, constant: -8).isActive = true
+        progressBarSlider.bottomAnchor.constraint(equalTo: controlStackView.topAnchor, constant: -8).isActive = true
+        progressBarSlider.heightAnchor.constraint(equalToConstant: 40).isActive = true
+    }
+
+    private func getBufferDuration() -> Double {
+        guard let timeRange = playerItem?.seekableTimeRanges.last?.timeRangeValue else {
+            return 0
+        }
+        let start = CMTimeGetSeconds(timeRange.start)
+        let duration = CMTimeGetSeconds(timeRange.duration)
+        return start + duration
+    }
+
+    @objc private func progressBarSliderValueDidChange(_ sender: UISlider) {
+        if isAvPlayerStoppedWithError {
+            let totalDuration = vlcPlayer.media?.length.intValue ?? 0
+            if totalDuration > 0 {
+                let newPosition = Float(sender.value) * Float(totalDuration)
+                vlcPlayer.position = newPosition / Float(totalDuration)
+            }
+            return
+        }
+
+        let bufferDuration = getBufferDuration()
+        var newTime: Double? = 0
+        if let duration = playerItem?.duration.seconds, duration > 0 {
+            newTime = Double(sender.value) * duration
+        } else if bufferDuration > 0 {
+            newTime = Double(sender.value) * bufferDuration
+        }
+
+        if let newTime, newTime > 0 {
+            let seekTime = CMTime(seconds: newTime, preferredTimescale: constant.preferredTimescale)
+            if seekTime != CMTime.invalid {
+                player?.seek(to: seekTime)
+            }
+        }
     }
 
     private func setupVideoGravity() {
-        if useVLCPlayer && isAvPlayerStoppedWithError {
+        if isAvPlayerStoppedWithError {
             vlcPlayer.videoAspectRatio = nil
             let screenSize = backVideoView.bounds.size
             let videoSize = vlcPlayer.videoSize
-            if isFullScreenMode && screenSize.height > 0 && screenSize.width > 0 && videoSize.height > 0 && videoSize.width > 0 {
+            if isFullScreenMode, screenSize.height > 0, screenSize.width > 0, videoSize.height > 0, videoSize.width > 0 {
                 let ar = videoSize.width / videoSize.height
                 let dar = screenSize.width / screenSize.height
 
@@ -881,13 +943,36 @@ extension PlayerVC {
         }
     }
 
-    private func setupPlayer() {
-        let urlString = channels[currentIndex].url.absoluteString.replacingSuffixIfCan(of: ".ts", with: ".m3u8")
-        guard let url = URL(string: urlString) else {
-            proccessError()
-            return
+    private func addPeriodicTimeObserver() {
+        removePeriodicTimeObserver()
+        timeObserver = Timer.scheduledTimer(timeInterval: 1.0, target: self, selector: #selector(updateSlider), userInfo: nil, repeats: true)
+    }
+
+    private func removePeriodicTimeObserver() {
+        timeObserver?.invalidate()
+        timeObserver = nil
+    }
+
+    @objc private func updateSlider() {
+        if isAvPlayerStoppedWithError {
+            progressBarSlider.value = vlcPlayer.position
+        } else if let duration = playerItem?.duration.seconds, duration > 0 {
+            let currentTime = playerItem?.currentTime().seconds ?? 0
+            let progress = currentTime / duration
+            progressBarSlider.value = Float(progress)
+        } else if let currentTime = playerItem?.currentTime().seconds {
+            let duration = getBufferDuration()
+            if duration > 0 {
+                let progress = currentTime / duration
+                progressBarSlider.value = Float(progress)
+            } else {
+                progressBarSlider.value = 0
+            }
         }
-        
+    }
+
+    private func setupPlayer() {
+        removePeriodicTimeObserver()
         removePlayerObservers()
         player?.pause()
         player = nil
@@ -896,12 +981,18 @@ extension PlayerVC {
         vlcPlayer.drawable = nil
         playerLayer?.removeFromSuperlayer()
         recreateBackVideoView()
-        
-        if useVLCPlayer && isAvPlayerStoppedWithError {
+
+        let urlString = channels[currentIndex].url.absoluteString.replacingSuffixIfCan(of: ".ts", with: ".m3u8")
+        guard let url = URL(string: urlString) else {
+            proccessError()
+            return
+        }
+
+        if isAvPlayerStoppedWithError {
             pipButton.isEnabled = false
             setupVLCMediaPLayer(url: url)
         } else {
-            pipButton.isEnabled = true            
+            pipButton.isEnabled = true
             let asset = AVAsset(url: url)
             let playerItem = AVPlayerItem(asset: asset, automaticallyLoadedAssetKeys: nil)
             player = pipModel?.player ?? AVPlayer(playerItem: playerItem)
@@ -917,13 +1008,14 @@ extension PlayerVC {
             }
             player?.play()
         }
-        
+
+        addPeriodicTimeObserver()
         errorLabel.isHidden = true
         playPauseButton.setImage(UIImage(imageName: constant.pauseImageName)?.withRenderingMode(.alwaysTemplate), for: .normal)
         pipModel = nil
         nameLabel.text = channels[currentIndex].name
     }
-    
+
     private func setupBrightnessSlider() {
         brightnessSlider.addTarget(self, action: #selector(brightnessSliderValueDidChange(_:)), for: .valueChanged)
         brightnessStackView.addArrangedSubview(brightnessSlider)
@@ -933,20 +1025,20 @@ extension PlayerVC {
         brightnessStackView.centerYAnchor.constraint(equalTo: playControlView.centerYAnchor, constant: 0).isActive = true
         brightnessLeadingConstraint = brightnessSlider.leadingAnchor.constraint(equalTo: playControlView.leadingAnchor, constant: -constant.sliderIndentPortrait)
         brightnessLeadingConstraint?.isActive = true
-        
+
         let imageView = UIImageView(frame: .zero)
         imageView.tintColor = .white
         imageView.image = UIImage(imageName: "brightness")?.withRenderingMode(.alwaysTemplate)
-        imageView.transform = CGAffineTransformMakeRotation(Double.pi / 2);
+        imageView.transform = CGAffineTransformMakeRotation(Double.pi / 2)
         brightnessStackView.addArrangedSubview(imageView)
         imageView.widthAnchor.constraint(equalToConstant: 16).isActive = true
         imageView.heightAnchor.constraint(equalToConstant: 16).isActive = true
     }
-       
-   @objc private func brightnessSliderValueDidChange(_ sender: UISlider) {
-       UIScreen.main.brightness = CGFloat(sender.value)
-   }
-    
+
+    @objc private func brightnessSliderValueDidChange(_ sender: UISlider) {
+        UIScreen.main.brightness = CGFloat(sender.value)
+    }
+
     private func setupVolumeSlider() {
         volumeSlider.addTarget(self, action: #selector(volumeSliderValueDidChange(_:)), for: .valueChanged)
         volumeStackView.addArrangedSubview(volumeSlider)
@@ -956,21 +1048,21 @@ extension PlayerVC {
         volumeStackView.centerYAnchor.constraint(equalTo: playControlView.centerYAnchor, constant: 0).isActive = true
         volumeTrailingConstraint = volumeStackView.trailingAnchor.constraint(equalTo: playControlView.trailingAnchor, constant: constant.sliderIndentPortrait)
         volumeTrailingConstraint?.isActive = true
-        
+
         let imageView = UIImageView(frame: .zero)
         imageView.tintColor = .white
         imageView.image = UIImage(imageName: "volume")?.withRenderingMode(.alwaysTemplate)
-        imageView.transform = CGAffineTransformMakeRotation(Double.pi / 2);
+        imageView.transform = CGAffineTransformMakeRotation(Double.pi / 2)
         volumeStackView.addArrangedSubview(imageView)
         imageView.widthAnchor.constraint(equalToConstant: 16).isActive = true
         imageView.heightAnchor.constraint(equalToConstant: 16).isActive = true
     }
-    
+
     private func subscribeToNotifications() {
         NotificationCenter.default.addObserver(forName: UIApplication.didBecomeActiveNotification, object: nil, queue: .main, using: { [weak self] _ in
             self?.updateBrighnessAndVolume()
         })
-        
+
         NotificationCenter.default.addObserver(forName: UIApplication.willEnterForegroundNotification, object: nil, queue: .main, using: { [weak self] _ in
             if let player = self?.player {
                 let isPlaying = player.rate > 0
@@ -980,23 +1072,22 @@ extension PlayerVC {
                 self?.setupPlayPauseImage(!isPlaying)
             }
         })
-
     }
-    
+
     private func updateBrighnessAndVolume() {
         brightnessSlider.value = Float(UIScreen.main.brightness)
         volumeSlider.value = AVAudioSession.sharedInstance().outputVolume
     }
-       
-   @objc private func volumeSliderValueDidChange(_ sender: UISlider) {
-       MPVolumeView.setVolume(sender.value)
-       player?.volume = 1
-       if let auduo = vlcPlayer.audio {
-           auduo.isMuted = false
-       }
-       setupSoundButtonImage()
-   }
-    
+
+    @objc private func volumeSliderValueDidChange(_ sender: UISlider) {
+        MPVolumeView.setVolume(sender.value)
+        player?.volume = 1
+        if let auduo = vlcPlayer.audio {
+            auduo.isMuted = false
+        }
+        setupSoundButtonImage()
+    }
+
     private func setupVLCMediaPLayer(url: URL) {
         vlcPlayer.delegate = self
         vlcPlayer.drawable = backVideoView
@@ -1013,7 +1104,7 @@ extension PlayerVC {
 }
 
 extension PlayerVC: VLCMediaPlayerDelegate {
-    public func mediaPlayerStateChanged(_ aNotification: Notification) {
+    public func mediaPlayerStateChanged(_: Notification) {
         switch vlcPlayer.state {
         case .opening:
             loader.startAnimating()
@@ -1026,8 +1117,8 @@ extension PlayerVC: VLCMediaPlayerDelegate {
     }
 }
 
-extension PlayerVC {
-    public struct Constant {
+public extension PlayerVC {
+    struct Constant {
         public var hideControlsTimeInterval: CGFloat = 10.0
         public var playButtonWidth: CGFloat = 60
         public var buttonWidth: CGFloat = 40
@@ -1039,6 +1130,7 @@ extension PlayerVC {
         public var nameLabelTopIndentLandscape: CGFloat = 20
         public var sliderIndentPortrait: CGFloat = 90
         public var sliderIndentLandscape: CGFloat = 0
+        public var preferredTimescale: CMTimeScale = 600
         public var pauseImageName = "pause"
         public var playImageName = "play"
         public var soundOnImageName = "sound-on"
@@ -1054,7 +1146,7 @@ extension PlayerVC {
         public var buttonActiveTintColor = UIColor.red
     }
 
-    public struct Channel {
+    struct Channel {
         public let url: URL
         public let name: String
         public let id: String

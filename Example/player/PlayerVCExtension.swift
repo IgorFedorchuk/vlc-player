@@ -13,11 +13,10 @@ extension PlayerVC {
         let playerVC = PlayerVC(channels: channels, currentIndex: currentIndex, pipModel: pipModel)
         playerVC.modalPresentationStyle = .overFullScreen
         playerVC.needCloseOnPipPressed = true
-        playerVC.useVLCPlayer = true
         playerVC.needShowFavoriteButton = true
         playerVC.needShowLockOrientationButton = true
-        playerVC.onFavoritePressed = { channel in
-            return true
+        playerVC.onFavoritePressed = { _ in
+            true
         }
         playerVC.onError = { url, error in
             let link = url.absoluteString

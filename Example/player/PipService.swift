@@ -19,7 +19,7 @@ protocol IPipService {
 
 final class PipService: NSObject, IPipService {
     static let shared = PipService()
-    
+
     private var pipModel: PipModel?
     private var channels: ([PlayerVC.Channel], Int)?
     private var pauseTimer: Timer?
@@ -28,7 +28,7 @@ final class PipService: NSObject, IPipService {
         self.pipModel = pipModel
         self.channels = channels
         pipModel.pipController.delegate = self
-        
+
         invalidatePauseTimer()
         if let pauseTimeInterval = pipModel.pauseTimeInterval {
             pauseTimer = Timer.scheduledTimer(withTimeInterval: pauseTimeInterval, repeats: false) { [weak self] _ in
@@ -58,13 +58,15 @@ extension PipService: AVPictureInPictureControllerDelegate {
     }
 
     func pictureInPictureController(_: AVPictureInPictureController,
-                                    restoreUserInterfaceForPictureInPictureStopWithCompletionHandler completionHandler: @escaping (Bool) -> Void) {
+                                    restoreUserInterfaceForPictureInPictureStopWithCompletionHandler completionHandler: @escaping (Bool) -> Void)
+    {
         guard var pipModel = pipModel,
-              let channels = channels else {
+              let channels = channels
+        else {
             completionHandler(false)
             return
         }
-        
+
         pipModel.pauseTimeInterval = pauseTimer?.fireDate.timeIntervalSince(Date())
         let playerVC = PlayerVC.create(channels: channels.0, currentIndex: channels.1, pipModel: pipModel)
         UIViewController.topViewController()?.present(playerVC, animated: false) {
@@ -82,7 +84,7 @@ extension PipService {
         invalidatePauseTimer()
         pipModel = nil
     }
-    
+
     private func invalidatePauseTimer() {
         pauseTimer?.invalidate()
         pauseTimer = nil
