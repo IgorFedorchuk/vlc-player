@@ -15,9 +15,10 @@
 - changing system volume
 - lock rotation
 - pause timer
+- progress bar
 
 # Screenshot
-![Simulator Screenshot - iPad Pro (12 9-inch) (6th generation) - 2024-05-12 at 14 41 15](https://github.com/IgorFedorchuk/vlc-player/assets/2764603/f7b61607-cae5-4993-a09a-33203d86af41)
+![Simulator Screenshot - iPad Pro (12 9-inch) (2nd generation) - 2024-06-29 at 12 18 25](https://github.com/IgorFedorchuk/vlc-player/assets/2764603/0fe5b684-6100-4c73-a6ea-3c61a4a9de3c)
 
 # How to use
 For clearer comprehension, please open the project located in the "Example" folder.
