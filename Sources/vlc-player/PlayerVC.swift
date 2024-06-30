@@ -242,13 +242,13 @@ open class PlayerVC: UIViewController {
     open var lockedOrientations = UIInterfaceOrientationMask.allButUpsideDown
 
     public var constant = Constant()
-    public var onFavoritePressed: ((Channel) -> Bool)?
+    public var onFavoritePressed: ((Stream) -> Bool)?
     public var onViewDidLoad: (() -> Void)?
-    public var onError: ((URL, Error?) -> Void)?
-    public var onNextChannel: ((URL) -> Void)?
-    public var onPreviousChannel: ((URL) -> Void)?
+    public var onError: ((Stream, Error?) -> Void)?
+    public var onNextStream: ((Stream) -> Void)?
+    public var onPreviousStream: ((Stream) -> Void)?
 
-    public var onPipStarted: ((PipModel, [PlayerVC.Channel], Int) -> Void)?
+    public var onPipStarted: ((PipModel, [PlayerVC.Stream], Int) -> Void)?
 
     private var isFullScreenMode = false
     private var isPlayControlHidden = false
@@ -265,7 +265,7 @@ open class PlayerVC: UIViewController {
     private var timeObserver: Timer?
 
     private var hideControlsTimer: Timer?
-    private var channels: [PlayerVC.Channel]
+    private var streams: [PlayerVC.Stream]
     private var currentIndex: Int
     private var isObservingPlayer = false
 
@@ -277,8 +277,8 @@ open class PlayerVC: UIViewController {
         }
     }
 
-    public init(channels: [PlayerVC.Channel], currentIndex: Int, pipModel: PipModel?) {
-        self.channels = channels
+    public init(streams: [PlayerVC.Stream], currentIndex: Int, pipModel: PipModel?) {
+        self.streams = streams
         self.currentIndex = currentIndex
         self.pipModel = pipModel
         super.init(nibName: nil, bundle: nil)
@@ -411,7 +411,7 @@ extension PlayerVC {
         errorLabel.text = constant.errorText
         errorLabel.isHidden = false
         playPauseButton.setImage(UIImage(imageName: constant.playImageName)?.withRenderingMode(.alwaysTemplate), for: .normal)
-        onError?(channels[currentIndex].url, player?.currentItem?.error)
+        onError?(streams[currentIndex], player?.currentItem?.error)
     }
 
     private func setupCloseButton() {
@@ -594,7 +594,7 @@ extension PlayerVC {
     }
 
     private func setupFavoriteButton() {
-        setFavoriteButtonColor(channels[currentIndex].isFavorite)
+        setFavoriteButtonColor(streams[currentIndex].isFavorite)
         favoriteButton.addTarget(self, action: #selector(favoriteButtonPressed), for: .touchUpInside)
         if needShowFavoriteButton {
             controlStackView.addArrangedSubview(favoriteButton)
@@ -603,8 +603,8 @@ extension PlayerVC {
     }
 
     @objc private func favoriteButtonPressed() {
-        let isFavorite = onFavoritePressed?(channels[currentIndex]) == true
-        channels[currentIndex].isFavorite = isFavorite
+        let isFavorite = onFavoritePressed?(streams[currentIndex]) == true
+        streams[currentIndex].isFavorite = isFavorite
         setFavoriteButtonColor(isFavorite)
     }
 
@@ -664,7 +664,7 @@ extension PlayerVC {
         if pipController.isPictureInPictureActive {
             pipController.stopPictureInPicture()
         } else {
-            onPipStarted?(PipModel(pipController: pipController, player: player, pauseTimeInterval: pauseTimer?.fireDate.timeIntervalSince(Date())), channels, currentIndex)
+            onPipStarted?(PipModel(pipController: pipController, player: player, pauseTimeInterval: pauseTimer?.fireDate.timeIntervalSince(Date())), streams, currentIndex)
             pipController.startPictureInPicture()
             if needCloseOnPipPressed {
                 dismiss(animated: true)
@@ -777,31 +777,31 @@ extension PlayerVC {
     @objc private func playForwardButtonPressed() {
         startHideControlsTimer()
         let nextIndex = currentIndex + 1
-        if nextIndex < channels.count {
+        if nextIndex < streams.count {
             currentIndex = nextIndex
             isAvPlayerStoppedWithError = false
             setupPlayer()
-            setFavoriteButtonColor(channels[currentIndex].isFavorite)
+            setFavoriteButtonColor(streams[currentIndex].isFavorite)
         }
         setupPlayBackForwardButtonColor()
-        onNextChannel?(channels[currentIndex].url)
+        onNextStream?(streams[currentIndex])
     }
 
     @objc private func playBackButtonPressed() {
         startHideControlsTimer()
         let nextIndex = currentIndex - 1
-        if nextIndex >= 0, nextIndex < channels.count {
+        if nextIndex >= 0, nextIndex < streams.count {
             currentIndex = nextIndex
             isAvPlayerStoppedWithError = false
             setupPlayer()
-            setFavoriteButtonColor(channels[currentIndex].isFavorite)
+            setFavoriteButtonColor(streams[currentIndex].isFavorite)
         }
         setupPlayBackForwardButtonColor()
-        onPreviousChannel?(channels[currentIndex].url)
+        onPreviousStream?(streams[currentIndex])
     }
 
     private func setupPlayBackForwardButtonColor() {
-        playForwardButton.tintColor = currentIndex == channels.count - 1 ? UIColor.gray : UIColor.white
+        playForwardButton.tintColor = currentIndex == streams.count - 1 ? UIColor.gray : UIColor.white
         playBackButton.tintColor = currentIndex == 0 ? UIColor.gray : UIColor.white
     }
 
@@ -826,7 +826,7 @@ extension PlayerVC {
     }
 
     private func setupNameLabel() {
-        nameLabel.text = channels[currentIndex].name
+        nameLabel.text = streams[currentIndex].name
         playControlView.addSubview(nameLabel)
         nameLabel.leadingAnchor.constraint(equalTo: closeButton.trailingAnchor, constant: 8).isActive = true
         nameLabel.trailingAnchor.constraint(equalTo: soundButton.leadingAnchor, constant: -8).isActive = true
@@ -982,7 +982,7 @@ extension PlayerVC {
         playerLayer?.removeFromSuperlayer()
         recreateBackVideoView()
 
-        let urlString = channels[currentIndex].url.absoluteString.replacingSuffixIfCan(of: ".ts", with: ".m3u8")
+        let urlString = streams[currentIndex].url.absoluteString.replacingSuffixIfCan(of: ".ts", with: ".m3u8")
         guard let url = URL(string: urlString) else {
             proccessError()
             return
@@ -1013,7 +1013,7 @@ extension PlayerVC {
         errorLabel.isHidden = true
         playPauseButton.setImage(UIImage(imageName: constant.pauseImageName)?.withRenderingMode(.alwaysTemplate), for: .normal)
         pipModel = nil
-        nameLabel.text = channels[currentIndex].name
+        nameLabel.text = streams[currentIndex].name
     }
 
     private func setupBrightnessSlider() {
@@ -1146,7 +1146,7 @@ public extension PlayerVC {
         public var buttonActiveTintColor = UIColor.red
     }
 
-    struct Channel {
+    struct Stream {
         public let url: URL
         public let name: String
         public let id: String

@@ -9,8 +9,8 @@ import Foundation
 import vlc_player
 
 extension PlayerVC {
-    class func create(channels: [PlayerVC.Channel], currentIndex: Int, pipModel: PipModel?) -> PlayerVC {
-        let playerVC = PlayerVC(channels: channels, currentIndex: currentIndex, pipModel: pipModel)
+    class func create(streams: [PlayerVC.Stream], currentIndex: Int, pipModel: PipModel?) -> PlayerVC {
+        let playerVC = PlayerVC(streams: streams, currentIndex: currentIndex, pipModel: pipModel)
         playerVC.modalPresentationStyle = .overFullScreen
         playerVC.needCloseOnPipPressed = true
         playerVC.needShowFavoriteButton = true
@@ -18,16 +18,22 @@ extension PlayerVC {
         playerVC.onFavoritePressed = { _ in
             true
         }
-        playerVC.onError = { url, error in
-            let link = url.absoluteString
+        playerVC.onNextStream = { stream in
+            print("stream:\(stream)")
+        }
+        playerVC.onPreviousStream = { stream in
+            print("stream:\(stream)")
+        }
+        playerVC.onError = { stream, error in
+            let link = stream.url.absoluteString
             let errorString = String(describing: error)
             #if DEBUG
                 print("Player error:\(errorString)")
                 print(link)
             #endif
         }
-        playerVC.onPipStarted = { pipModel, channels, currentIndex in
-            PipService.shared.set(pipModel: pipModel, channels: (channels, currentIndex))
+        playerVC.onPipStarted = { pipModel, streams, currentIndex in
+            PipService.shared.set(pipModel: pipModel, streams: (streams, currentIndex))
         }
         return playerVC
     }

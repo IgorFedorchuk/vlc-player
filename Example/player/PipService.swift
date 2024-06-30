@@ -13,20 +13,20 @@ import Foundation
 import vlc_player
 
 protocol IPipService {
-    func set(pipModel: PipModel, channels: ([PlayerVC.Channel], Int))
-    func playIfInPipMode(url: URL, channels: ([PlayerVC.Channel], Int)) -> Bool
+    func set(pipModel: PipModel, streams: ([PlayerVC.Stream], Int))
+    func playIfInPipMode(url: URL, streams: ([PlayerVC.Stream], Int)) -> Bool
 }
 
 final class PipService: NSObject, IPipService {
     static let shared = PipService()
 
     private var pipModel: PipModel?
-    private var channels: ([PlayerVC.Channel], Int)?
+    private var streams: ([PlayerVC.Stream], Int)?
     private var pauseTimer: Timer?
 
-    func set(pipModel: PipModel, channels: ([PlayerVC.Channel], Int)) {
+    func set(pipModel: PipModel, streams: ([PlayerVC.Stream], Int)) {
         self.pipModel = pipModel
-        self.channels = channels
+        self.streams = streams
         pipModel.pipController.delegate = self
 
         invalidatePauseTimer()
@@ -38,12 +38,12 @@ final class PipService: NSObject, IPipService {
         }
     }
 
-    func playIfInPipMode(url: URL, channels: ([PlayerVC.Channel], Int)) -> Bool {
+    func playIfInPipMode(url: URL, streams: ([PlayerVC.Stream], Int)) -> Bool {
         guard let pipModel = pipModel else { return false }
         pipModel.player.pause()
         pipModel.player.replaceCurrentItem(with: AVPlayerItem(url: url))
         pipModel.player.play()
-        self.channels = channels
+        self.streams = streams
         return true
     }
 }
@@ -61,14 +61,14 @@ extension PipService: AVPictureInPictureControllerDelegate {
                                     restoreUserInterfaceForPictureInPictureStopWithCompletionHandler completionHandler: @escaping (Bool) -> Void)
     {
         guard var pipModel = pipModel,
-              let channels = channels
+              let streams = streams
         else {
             completionHandler(false)
             return
         }
 
         pipModel.pauseTimeInterval = pauseTimer?.fireDate.timeIntervalSince(Date())
-        let playerVC = PlayerVC.create(channels: channels.0, currentIndex: channels.1, pipModel: pipModel)
+        let playerVC = PlayerVC.create(streams: streams.0, currentIndex: streams.1, pipModel: pipModel)
         UIViewController.topViewController()?.present(playerVC, animated: false) {
             self.clear(needToPause: false)
             completionHandler(true)
