@@ -253,6 +253,7 @@ open class PlayerVC: UIViewController {
     private var isFullScreenMode = false
     private var isPlayControlHidden = false
     private var isAvPlayerStoppedWithError = false
+    private var wasVLCStopped = false
 
     open var vlcPlayer = VLCMediaPlayer()
 
@@ -453,6 +454,8 @@ extension PlayerVC {
             setupPlayPauseImage(isPlaying)
             if isPlaying {
                 vlcPlayer.pause()
+            } else if wasVLCStopped {
+                setupPlayer()
             } else {
                 vlcPlayer.play()
             }
@@ -979,6 +982,7 @@ extension PlayerVC {
         playerItem = nil
         vlcPlayer.stop()
         vlcPlayer.drawable = nil
+        wasVLCStopped = false
         playerLayer?.removeFromSuperlayer()
         recreateBackVideoView()
 
@@ -1106,11 +1110,21 @@ extension PlayerVC {
 extension PlayerVC: VLCMediaPlayerDelegate {
     public func mediaPlayerStateChanged(_: Notification) {
         switch vlcPlayer.state {
+        case .paused:
+            setupPlayPauseImage(true)
+            loader.stopAnimating()
+        case .stopped:
+            setupPlayPauseImage(true)
+            loader.stopAnimating()
+            wasVLCStopped = true
         case .opening:
             loader.startAnimating()
+        case .buffering:
+            setupPlayPauseImage(false)
         case .error:
             proccessError()
             loader.stopAnimating()
+            setupPlayPauseImage(true)
         default:
             loader.stopAnimating()
         }
