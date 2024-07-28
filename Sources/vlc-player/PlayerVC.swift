@@ -155,6 +155,17 @@ open class PlayerVC: UIViewController {
         return button
     }()
 
+    open var shareButton: UIButton = {
+        let button = UIButton(frame: CGRect.zero)
+        button.backgroundColor = .clear
+        button.tintColor = .white
+        button.setImage(UIImage(imageName: "share")?.withRenderingMode(.alwaysTemplate), for: .normal)
+        let inset = CGFloat(8)
+        button.imageEdgeInsets = UIEdgeInsets(top: inset, left: inset, bottom: inset, right: inset)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        return button
+    }()
+    
     open var favoriteButton: UIButton = {
         let button = UIButton(frame: CGRect.zero)
         button.backgroundColor = .clear
@@ -237,6 +248,7 @@ open class PlayerVC: UIViewController {
 
     open var needCloseOnPipPressed = false
     open var needShowFavoriteButton = false
+    open var needShowShareButton = false
     open var needShowLockOrientationButton = true
     open var isRotationLocked = false
     open var lockedOrientations = UIInterfaceOrientationMask.allButUpsideDown
@@ -247,6 +259,7 @@ open class PlayerVC: UIViewController {
     public var onError: ((Stream, Error?) -> Void)?
     public var onNextStream: ((Stream) -> Void)?
     public var onPreviousStream: ((Stream) -> Void)?
+    public var onShareStream: ((Stream) -> String)?
 
     public var onPipStarted: ((PipModel, [PlayerVC.Stream], Int) -> Void)?
 
@@ -596,6 +609,22 @@ extension PlayerVC {
         airplayButton.widthAnchor.constraint(equalToConstant: constant.buttonWidth).isActive = true
     }
 
+    private func setupShareButton() {
+        shareButton.addTarget(self, action: #selector(shareButtonPressed), for: .touchUpInside)
+        if needShowShareButton {
+            controlStackView.addArrangedSubview(shareButton)
+        }
+        shareButton.widthAnchor.constraint(equalToConstant: constant.buttonWidth).isActive = true
+    }
+
+    @objc private func shareButtonPressed() {
+        let stream = streams[currentIndex]
+        let sharedText = onShareStream?(stream) ?? stream.url.absoluteString
+        let activityViewController = UIActivityViewController(activityItems: [sharedText], applicationActivities: nil)
+        activityViewController.popoverPresentationController?.sourceView = shareButton
+        present(activityViewController, animated: true, completion: nil)
+    }
+    
     private func setupFavoriteButton() {
         setFavoriteButtonColor(streams[currentIndex].isFavorite)
         favoriteButton.addTarget(self, action: #selector(favoriteButtonPressed), for: .touchUpInside)
@@ -868,6 +897,7 @@ extension PlayerVC {
         setupPauseTimerButton()
         setupFavoriteButton()
         setupLockOrientationButton()
+        setupShareButton()
         setupSoundButton()
         setupErrorLabel()
         setupPlayForwardButton()
