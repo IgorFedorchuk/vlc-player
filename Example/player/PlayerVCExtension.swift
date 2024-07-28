@@ -14,7 +14,9 @@ extension PlayerVC {
         playerVC.modalPresentationStyle = .overFullScreen
         playerVC.needCloseOnPipPressed = true
         playerVC.needShowFavoriteButton = true
+        playerVC.needShowShareButton = true
         playerVC.needShowLockOrientationButton = true
+
         playerVC.onFavoritePressed = { _ in
             true
         }
