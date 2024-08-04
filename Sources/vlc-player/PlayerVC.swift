@@ -232,18 +232,11 @@ open class PlayerVC: UIViewController {
         return label
     }()
 
-    open var progressBarSlider: UISlider = {
-        let slider = UISlider(frame: CGRect.zero)
-        slider.tintColor = UIColor.white
-        slider.backgroundColor = .clear
-        slider.minimumTrackTintColor = UIColor.white
-        slider.maximumTrackTintColor = UIColor.color(r: 255, g: 255, b: 255, a: 0.4)
-        slider.translatesAutoresizingMaskIntoConstraints = false
-        slider.minimumValue = 0.0
-        slider.maximumValue = 1.0
-        slider.value = 0
-        slider.setThumbImage(UIImage(imageName: "vertical-line")?.withRenderingMode(UIImage.RenderingMode.alwaysTemplate), for: UIControl.State.normal)
-        return slider
+    public var progressBarView: ProgressBarView = {
+        let progressBarView = ProgressBarView()
+        progressBarView.backgroundColor = .clear
+        progressBarView.translatesAutoresizingMaskIntoConstraints = false
+        return progressBarView
     }()
 
     open var needCloseOnPipPressed = false
@@ -905,16 +898,18 @@ extension PlayerVC {
         setupNameLabel()
         setupBrightnessSlider()
         setupVolumeSlider()
-        setupProgressBarSlider()
+        setupProgressBar()
     }
 
-    private func setupProgressBarSlider() {
-        progressBarSlider.addTarget(self, action: #selector(progressBarSliderValueDidChange(_:)), for: .valueChanged)
-        playControlView.addSubview(progressBarSlider)
-        progressBarSlider.leadingAnchor.constraint(equalTo: playControlView.leadingAnchor, constant: 8).isActive = true
-        progressBarSlider.trailingAnchor.constraint(equalTo: playControlView.trailingAnchor, constant: -8).isActive = true
-        progressBarSlider.bottomAnchor.constraint(equalTo: controlStackView.topAnchor, constant: -8).isActive = true
-        progressBarSlider.heightAnchor.constraint(equalToConstant: 40).isActive = true
+    private func setupProgressBar() {
+        progressBarView.onSliderValueChanged = { [weak self] value in
+            self?.progressBarValueDidChange(value)
+        }
+        playControlView.addSubview(progressBarView)
+        progressBarView.leadingAnchor.constraint(equalTo: playControlView.leadingAnchor, constant: 8).isActive = true
+        progressBarView.trailingAnchor.constraint(equalTo: playControlView.trailingAnchor, constant: -8).isActive = true
+        progressBarView.bottomAnchor.constraint(equalTo: controlStackView.topAnchor, constant: -8).isActive = true
+        progressBarView.heightAnchor.constraint(equalToConstant: 40).isActive = true
     }
 
     private func getBufferDuration() -> Double {
@@ -926,11 +921,11 @@ extension PlayerVC {
         return start + duration
     }
 
-    @objc private func progressBarSliderValueDidChange(_ sender: UISlider) {
+    @objc private func progressBarValueDidChange(_ value: Float) {
         if isAvPlayerStoppedWithError {
             let totalDuration = vlcPlayer.media?.length.intValue ?? 0
             if totalDuration > 0 {
-                let newPosition = Float(sender.value) * Float(totalDuration)
+                let newPosition = value * Float(totalDuration)
                 vlcPlayer.position = newPosition / Float(totalDuration)
             }
             return
@@ -939,9 +934,9 @@ extension PlayerVC {
         let bufferDuration = getBufferDuration()
         var newTime: Double? = 0
         if let duration = playerItem?.duration.seconds, duration > 0 {
-            newTime = Double(sender.value) * duration
+            newTime = Double(value) * duration
         } else if bufferDuration > 0 {
-            newTime = Double(sender.value) * bufferDuration
+            newTime = Double(value) * bufferDuration
         }
 
         if let newTime, newTime > 0 {
@@ -988,18 +983,18 @@ extension PlayerVC {
 
     @objc private func updateSlider() {
         if isAvPlayerStoppedWithError {
-            progressBarSlider.value = vlcPlayer.position
+            progressBarView.value = vlcPlayer.position
         } else if let duration = playerItem?.duration.seconds, duration > 0 {
             let currentTime = playerItem?.currentTime().seconds ?? 0
             let progress = currentTime / duration
-            progressBarSlider.value = Float(progress)
+            progressBarView.value = Float(progress)
         } else if let currentTime = playerItem?.currentTime().seconds {
             let duration = getBufferDuration()
             if duration > 0 {
                 let progress = currentTime / duration
-                progressBarSlider.value = Float(progress)
+                progressBarView.value = Float(progress)
             } else {
-                progressBarSlider.value = 0
+                progressBarView.value = 0
             }
         }
     }

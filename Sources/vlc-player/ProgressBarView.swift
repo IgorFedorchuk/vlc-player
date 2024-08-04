@@ -7,8 +7,8 @@
 
 import UIKit
 
-final class ProgressBarView: UIView {
-    private var progressBarSlider: UISlider = {
+final public class ProgressBarView: UIView {
+    public var progressSlider: UISlider = {
         let slider = UISlider(frame: CGRect.zero)
         slider.tintColor = UIColor.white
         slider.backgroundColor = .clear
@@ -22,6 +22,15 @@ final class ProgressBarView: UIView {
         return slider
     }()
    
+    var value: Float {
+        get {
+            return progressSlider.value
+        }
+        set {
+            progressSlider.value = newValue
+        }
+    }
+    
     var onSliderValueChanged: ((Float) -> Void)?
     
     init() {
@@ -37,15 +46,15 @@ final class ProgressBarView: UIView {
 
 extension ProgressBarView {
     private func setupProgressBarSlider() {
-        progressBarSlider.addTarget(self, action: #selector(progressBarSliderValueDidChange(_:)), for: .valueChanged)
-        addSubview(progressBarSlider)
-        progressBarSlider.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 8).isActive = true
-        progressBarSlider.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -8).isActive = true
-        progressBarSlider.bottomAnchor.constraint(equalTo: topAnchor, constant: -8).isActive = true
-        progressBarSlider.heightAnchor.constraint(equalToConstant: 40).isActive = true
+        progressSlider.addTarget(self, action: #selector(progressBarValueDidChange(_:)), for: .valueChanged)
+        addSubview(progressSlider)
+        progressSlider.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 8).isActive = true
+        progressSlider.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -8).isActive = true
+        progressSlider.bottomAnchor.constraint(equalTo: bottomAnchor, constant: 0).isActive = true
+        progressSlider.topAnchor.constraint(equalTo: topAnchor, constant: 0).isActive = true
     }
     
-    @objc private func progressBarSliderValueDidChange(_ sender: UISlider) {
+    @objc private func progressBarValueDidChange(_ sender: UISlider) {
         onSliderValueChanged?(sender.value)
     }
 }
