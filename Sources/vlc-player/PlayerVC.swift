@@ -909,7 +909,7 @@ extension PlayerVC {
         progressBarView.leadingAnchor.constraint(equalTo: playControlView.leadingAnchor, constant: 8).isActive = true
         progressBarView.trailingAnchor.constraint(equalTo: playControlView.trailingAnchor, constant: -8).isActive = true
         progressBarView.bottomAnchor.constraint(equalTo: controlStackView.topAnchor, constant: -8).isActive = true
-        progressBarView.heightAnchor.constraint(equalToConstant: 54).isActive = true
+        progressBarView.heightAnchor.constraint(equalToConstant: 45).isActive = true
     }
 
     private func getBufferDuration() -> Double {
@@ -988,6 +988,8 @@ extension PlayerVC {
             let currentTime = playerItem?.currentTime().seconds ?? 0
             let progress = currentTime / duration
             progressBarView.value = Float(progress)
+            progressBarView.set(startSecond: Int(currentTime))
+            progressBarView.set(endSecond: Int(duration))
         } else if let currentTime = playerItem?.currentTime().seconds {
             let duration = getBufferDuration()
             if duration > 0 {
