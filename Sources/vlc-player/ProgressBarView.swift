@@ -22,6 +22,26 @@ final public class ProgressBarView: UIView {
         return slider
     }()
    
+    public var startLabel: UILabel = {
+        let label = UILabel(frame: CGRect.zero)
+        label.backgroundColor = .clear
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.textColor = .white
+        label.text = ""
+        label.font = UIFont.systemFont(ofSize: 17)
+        return label
+    }()
+    
+    public var endLabel: UILabel = {
+        let label = UILabel(frame: CGRect.zero)
+        label.backgroundColor = .clear
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.textColor = .white
+        label.text = ""
+        label.font = UIFont.systemFont(ofSize: 17)
+        return label
+    }()
+    
     var value: Float {
         get {
             return progressSlider.value
@@ -35,6 +55,8 @@ final public class ProgressBarView: UIView {
     
     init() {
         super.init(frame: .zero)
+        setupStartLabel()
+        setupEndLabel()
         setupProgressBarSlider()
     }
     
@@ -45,13 +67,26 @@ final public class ProgressBarView: UIView {
 }
 
 extension ProgressBarView {
+    private func setupStartLabel() {
+        addSubview(startLabel)
+        startLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 8).isActive = true
+        startLabel.topAnchor.constraint(equalTo: topAnchor, constant: 0).isActive = true
+        startLabel.text = "00:00:00"
+    }
+    
+    private func setupEndLabel() {
+        addSubview(endLabel)
+        endLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: 8).isActive = true
+        endLabel.topAnchor.constraint(equalTo: topAnchor, constant: 0).isActive = true
+    }
+    
     private func setupProgressBarSlider() {
         progressSlider.addTarget(self, action: #selector(progressBarValueDidChange(_:)), for: .valueChanged)
         addSubview(progressSlider)
         progressSlider.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 8).isActive = true
         progressSlider.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -8).isActive = true
         progressSlider.bottomAnchor.constraint(equalTo: bottomAnchor, constant: 0).isActive = true
-        progressSlider.topAnchor.constraint(equalTo: topAnchor, constant: 0).isActive = true
+        progressSlider.topAnchor.constraint(equalTo: startLabel.bottomAnchor, constant: 0).isActive = true
     }
     
     @objc private func progressBarValueDidChange(_ sender: UISlider) {

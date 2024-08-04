@@ -909,7 +909,7 @@ extension PlayerVC {
         progressBarView.leadingAnchor.constraint(equalTo: playControlView.leadingAnchor, constant: 8).isActive = true
         progressBarView.trailingAnchor.constraint(equalTo: playControlView.trailingAnchor, constant: -8).isActive = true
         progressBarView.bottomAnchor.constraint(equalTo: controlStackView.topAnchor, constant: -8).isActive = true
-        progressBarView.heightAnchor.constraint(equalToConstant: 40).isActive = true
+        progressBarView.heightAnchor.constraint(equalToConstant: 54).isActive = true
     }
 
     private func getBufferDuration() -> Double {
