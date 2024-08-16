@@ -1162,7 +1162,6 @@ extension PlayerVC {
 
 extension PlayerVC: VLCMediaPlayerDelegate {
     public func mediaPlayerStateChanged(_: Notification) {
-        print(vlcPlayer.state.rawValue)
         switch vlcPlayer.state {
         case .paused:
             setupPlayPauseImage(true)
