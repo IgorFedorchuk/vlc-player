@@ -165,7 +165,7 @@ open class PlayerVC: UIViewController {
         button.translatesAutoresizingMaskIntoConstraints = false
         return button
     }()
-    
+
     open var favoriteButton: UIButton = {
         let button = UIButton(frame: CGRect.zero)
         button.backgroundColor = .clear
@@ -232,18 +232,11 @@ open class PlayerVC: UIViewController {
         return label
     }()
 
-    open var progressBarSlider: UISlider = {
-        let slider = UISlider(frame: CGRect.zero)
-        slider.tintColor = UIColor.white
-        slider.backgroundColor = .clear
-        slider.minimumTrackTintColor = UIColor.white
-        slider.maximumTrackTintColor = UIColor.color(r: 255, g: 255, b: 255, a: 0.4)
-        slider.translatesAutoresizingMaskIntoConstraints = false
-        slider.minimumValue = 0.0
-        slider.maximumValue = 1.0
-        slider.value = 0
-        slider.setThumbImage(UIImage(imageName: "vertical-line")?.withRenderingMode(UIImage.RenderingMode.alwaysTemplate), for: UIControl.State.normal)
-        return slider
+    public var progressBarView: ProgressBarView = {
+        let progressBarView = ProgressBarView()
+        progressBarView.backgroundColor = .clear
+        progressBarView.translatesAutoresizingMaskIntoConstraints = false
+        return progressBarView
     }()
 
     open var needCloseOnPipPressed = false
@@ -267,8 +260,9 @@ open class PlayerVC: UIViewController {
     private var isPlayControlHidden = false
     private var isAvPlayerStoppedWithError = false
     private var wasVLCStopped = false
+    private var wasVLCFirstStopSkiped = false
 
-    open var vlcPlayer = VLCMediaPlayer()
+    private var vlcPlayer = VLCMediaPlayer()
 
     private var playerItem: AVPlayerItem?
     private var player: AVPlayer?
@@ -282,6 +276,13 @@ open class PlayerVC: UIViewController {
     private var streams: [PlayerVC.Stream]
     private var currentIndex: Int
     private var isObservingPlayer = false
+
+    private var isPlaying: Bool {
+        if isAvPlayerStoppedWithError {
+            return vlcPlayer.isPlaying
+        }
+        return player?.rate != 0
+    }
 
     open var windowInterfaceOrientation: UIInterfaceOrientation? {
         if #available(iOS 13.0, *) {
@@ -463,7 +464,6 @@ extension PlayerVC {
         }
 
         if isAvPlayerStoppedWithError {
-            let isPlaying = vlcPlayer.isPlaying
             setupPlayPauseImage(isPlaying)
             if isPlaying {
                 vlcPlayer.pause()
@@ -471,12 +471,13 @@ extension PlayerVC {
                 setupPlayer()
             } else {
                 vlcPlayer.play()
+                addPeriodicTimeObserver()
             }
         } else {
-            let isPlaying = player?.rate != 0
             setupPlayPauseImage(isPlaying)
             if player?.rate == 0 {
                 player?.play()
+                addPeriodicTimeObserver()
             } else {
                 player?.pause()
             }
@@ -624,7 +625,7 @@ extension PlayerVC {
         activityViewController.popoverPresentationController?.sourceView = shareButton
         present(activityViewController, animated: true, completion: nil)
     }
-    
+
     private func setupFavoriteButton() {
         setFavoriteButtonColor(streams[currentIndex].isFavorite)
         favoriteButton.addTarget(self, action: #selector(favoriteButtonPressed), for: .touchUpInside)
@@ -905,16 +906,29 @@ extension PlayerVC {
         setupNameLabel()
         setupBrightnessSlider()
         setupVolumeSlider()
-        setupProgressBarSlider()
+        setupProgressBar()
     }
 
-    private func setupProgressBarSlider() {
-        progressBarSlider.addTarget(self, action: #selector(progressBarSliderValueDidChange(_:)), for: .valueChanged)
-        playControlView.addSubview(progressBarSlider)
-        progressBarSlider.leadingAnchor.constraint(equalTo: playControlView.leadingAnchor, constant: 8).isActive = true
-        progressBarSlider.trailingAnchor.constraint(equalTo: playControlView.trailingAnchor, constant: -8).isActive = true
-        progressBarSlider.bottomAnchor.constraint(equalTo: controlStackView.topAnchor, constant: -8).isActive = true
-        progressBarSlider.heightAnchor.constraint(equalToConstant: 40).isActive = true
+    private func setupProgressBar() {
+        progressBarView.onStartDragging = { [weak self] _ in
+            self?.removePeriodicTimeObserver()
+            self?.invalidateHideControlsTimer()
+        }
+        progressBarView.onEndDragging = { [weak self] _ in
+            self?.startHideControlsTimer()
+            if self?.isPlaying == true {
+                self?.addPeriodicTimeObserver()
+            }
+        }
+        progressBarView.onChangeValue = { [weak self] value in
+            self?.progressBarValueDidChange(value)
+        }
+
+        playControlView.addSubview(progressBarView)
+        progressBarView.leadingAnchor.constraint(equalTo: playControlView.leadingAnchor, constant: 8).isActive = true
+        progressBarView.trailingAnchor.constraint(equalTo: playControlView.trailingAnchor, constant: -8).isActive = true
+        progressBarView.bottomAnchor.constraint(equalTo: controlStackView.topAnchor, constant: -8).isActive = true
+        progressBarView.heightAnchor.constraint(equalToConstant: 45).isActive = true
     }
 
     private func getBufferDuration() -> Double {
@@ -926,12 +940,12 @@ extension PlayerVC {
         return start + duration
     }
 
-    @objc private func progressBarSliderValueDidChange(_ sender: UISlider) {
+    @objc private func progressBarValueDidChange(_ value: Float) {
         if isAvPlayerStoppedWithError {
             let totalDuration = vlcPlayer.media?.length.intValue ?? 0
             if totalDuration > 0 {
-                let newPosition = Float(sender.value) * Float(totalDuration)
-                vlcPlayer.position = newPosition / Float(totalDuration)
+                let newPosition = value * Float(totalDuration)
+                vlcPlayer.time = VLCTime(int: Int32(newPosition))
             }
             return
         }
@@ -939,9 +953,9 @@ extension PlayerVC {
         let bufferDuration = getBufferDuration()
         var newTime: Double? = 0
         if let duration = playerItem?.duration.seconds, duration > 0 {
-            newTime = Double(sender.value) * duration
+            newTime = Double(value) * duration
         } else if bufferDuration > 0 {
-            newTime = Double(sender.value) * bufferDuration
+            newTime = Double(value) * bufferDuration
         }
 
         if let newTime, newTime > 0 {
@@ -988,66 +1002,27 @@ extension PlayerVC {
 
     @objc private func updateSlider() {
         if isAvPlayerStoppedWithError {
-            progressBarSlider.value = vlcPlayer.position
+            let currentTime = Int(vlcPlayer.time.intValue) / 1000
+            let duration = Int(vlcPlayer.media?.length.intValue ?? 0) / 1000
+            if duration > 0 {
+                let progress = Float(currentTime) / Float(duration)
+                progressBarView.set(value: progress, startSecond: currentTime, endSecond: Int(max(currentTime, duration)))
+            } else {
+                progressBarView.set(value: 0, startSecond: 0, endSecond: 0)
+            }
         } else if let duration = playerItem?.duration.seconds, duration > 0 {
             let currentTime = playerItem?.currentTime().seconds ?? 0
             let progress = currentTime / duration
-            progressBarSlider.value = Float(progress)
+            progressBarView.set(value: Float(progress), startSecond: Int(currentTime), endSecond: Int(max(currentTime, duration)))
         } else if let currentTime = playerItem?.currentTime().seconds {
             let duration = getBufferDuration()
             if duration > 0 {
                 let progress = currentTime / duration
-                progressBarSlider.value = Float(progress)
+                progressBarView.set(value: Float(progress), startSecond: Int(currentTime), endSecond: Int(max(currentTime, duration)))
             } else {
-                progressBarSlider.value = 0
+                progressBarView.set(value: 0, startSecond: 0, endSecond: 0)
             }
         }
-    }
-
-    private func setupPlayer() {
-        removePeriodicTimeObserver()
-        removePlayerObservers()
-        player?.pause()
-        player = nil
-        playerItem = nil
-        vlcPlayer.stop()
-        vlcPlayer.drawable = nil
-        wasVLCStopped = false
-        playerLayer?.removeFromSuperlayer()
-        recreateBackVideoView()
-
-        let urlString = streams[currentIndex].url.absoluteString.replacingSuffixIfCan(of: ".ts", with: ".m3u8")
-        guard let url = URL(string: urlString) else {
-            proccessError()
-            return
-        }
-
-        if isAvPlayerStoppedWithError {
-            pipButton.isEnabled = false
-            setupVLCMediaPLayer(url: url)
-        } else {
-            pipButton.isEnabled = true
-            let asset = AVAsset(url: url)
-            let playerItem = AVPlayerItem(asset: asset, automaticallyLoadedAssetKeys: nil)
-            player = pipModel?.player ?? AVPlayer(playerItem: playerItem)
-            self.playerItem = pipModel?.player.currentItem ?? playerItem
-            addPlayerObservers()
-            let playerLayer = pipModel?.pipController.playerLayer ?? AVPlayerLayer(player: player)
-            playerLayer.frame = backVideoView.bounds
-            backVideoView.layer.addSublayer(playerLayer)
-            self.playerLayer = playerLayer
-            setupVideoGravity()
-            if AVPictureInPictureController.isPictureInPictureSupported() {
-                pipController = AVPictureInPictureController(playerLayer: playerLayer)
-            }
-            player?.play()
-        }
-
-        addPeriodicTimeObserver()
-        errorLabel.isHidden = true
-        playPauseButton.setImage(UIImage(imageName: constant.pauseImageName)?.withRenderingMode(.alwaysTemplate), for: .normal)
-        pipModel = nil
-        nameLabel.text = streams[currentIndex].name
     }
 
     private func setupBrightnessSlider() {
@@ -1135,22 +1110,80 @@ extension PlayerVC {
         volumeTrailingConstraint?.constant = isLandscape ? constant.sliderIndentLandscape : constant.sliderIndentPortrait
         nameLabelTopConstraint?.constant = isLandscape ? constant.nameLabelTopIndentLandscape : constant.nameLabelTopIndentPortrait
     }
+
+    private func setupPlayer() {
+        removePeriodicTimeObserver()
+        removePlayerObservers()
+        player?.pause()
+        player = nil
+        playerItem = nil
+        vlcPlayer.stop()
+        vlcPlayer.drawable = nil
+        wasVLCStopped = false
+        wasVLCFirstStopSkiped = false
+        progressBarView.set(value: 0, startSecond: 0, endSecond: 0)
+        playerLayer?.removeFromSuperlayer()
+        recreateBackVideoView()
+
+        let urlString = streams[currentIndex].url.absoluteString.replacingSuffixIfCan(of: ".ts", with: ".m3u8")
+        guard let url = URL(string: urlString) else {
+            proccessError()
+            return
+        }
+
+        if isAvPlayerStoppedWithError {
+            pipButton.isEnabled = false
+            setupVLCMediaPLayer(url: url)
+        } else {
+            pipButton.isEnabled = true
+            let asset = AVAsset(url: url)
+            let playerItem = AVPlayerItem(asset: asset, automaticallyLoadedAssetKeys: nil)
+            player = pipModel?.player ?? AVPlayer(playerItem: playerItem)
+            self.playerItem = pipModel?.player.currentItem ?? playerItem
+            addPlayerObservers()
+            let playerLayer = pipModel?.pipController.playerLayer ?? AVPlayerLayer(player: player)
+            playerLayer.frame = backVideoView.bounds
+            backVideoView.layer.addSublayer(playerLayer)
+            self.playerLayer = playerLayer
+            setupVideoGravity()
+            if AVPictureInPictureController.isPictureInPictureSupported() {
+                pipController = AVPictureInPictureController(playerLayer: playerLayer)
+            }
+            player?.play()
+        }
+
+        addPeriodicTimeObserver()
+        errorLabel.isHidden = true
+        playPauseButton.setImage(UIImage(imageName: constant.pauseImageName)?.withRenderingMode(.alwaysTemplate), for: .normal)
+        pipModel = nil
+        nameLabel.text = streams[currentIndex].name
+    }
 }
 
 extension PlayerVC: VLCMediaPlayerDelegate {
     public func mediaPlayerStateChanged(_: Notification) {
+        print(vlcPlayer.state.rawValue)
         switch vlcPlayer.state {
         case .paused:
             setupPlayPauseImage(true)
             loader.stopAnimating()
         case .stopped:
-            setupPlayPauseImage(true)
-            loader.stopAnimating()
-            wasVLCStopped = true
+            if wasVLCFirstStopSkiped { // does not need to change image, because first Notification is always stop
+                setupPlayPauseImage(true)
+                loader.stopAnimating()
+                wasVLCStopped = true
+            }
+            wasVLCFirstStopSkiped = true
         case .opening:
             loader.startAnimating()
         case .buffering:
-            setupPlayPauseImage(false)
+            break
+        case .playing:
+            wasVLCStopped = false
+            loader.stopAnimating()
+            if !progressBarView.isDragging {
+                setupPlayPauseImage(false)
+            }
         case .error:
             proccessError()
             loader.stopAnimating()
