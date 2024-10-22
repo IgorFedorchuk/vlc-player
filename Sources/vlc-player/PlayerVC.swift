@@ -134,6 +134,7 @@ open class PlayerVC: UIViewController {
         button.titleLabel?.font = UIFont.systemFont(ofSize: 14)
         button.setTitleColor(.white, for: .normal)
         button.setTitleColor(.gray, for: .highlighted)
+        button.setTitleColor(.gray, for: .disabled)
         button.translatesAutoresizingMaskIntoConstraints = false
         return button
     }()
@@ -267,6 +268,7 @@ open class PlayerVC: UIViewController {
     public var onPreviousStream: ((Stream) -> Void)?
     public var onShareStream: ((Stream) -> String)?
     public var onEpgTapped: ((Stream) -> Void)?
+    public var onEpgChanged: ((Stream) -> Bool)?
 
     public var onPipStarted: ((PipModel, [PlayerVC.Stream], Int) -> Void)?
 
@@ -767,6 +769,7 @@ extension PlayerVC {
         guard needShowEpgButton else {
             return
         }
+        setupEpgButtonVisibility()
         epgButton.addTarget(self, action: #selector(epgButtonPressed), for: .touchUpInside)
         playControlView.addSubview(epgButton)
         epgButton.widthAnchor.constraint(equalToConstant: constant.buttonWidth).isActive = true
@@ -1143,6 +1146,14 @@ extension PlayerVC {
         nameLabelTopConstraint?.constant = isLandscape ? constant.nameLabelTopIndentLandscape : constant.nameLabelTopIndentPortrait
     }
 
+    private func setupEpgButtonVisibility() {
+        if let isEnable = onEpgChanged?(streams[currentIndex]) {
+            epgButton.isHidden = !isEnable
+        } else {
+            epgButton.isHidden = true
+        }
+    }
+    
     private func setupPlayer() {
         removePeriodicTimeObserver()
         removePlayerObservers()
@@ -1156,6 +1167,7 @@ extension PlayerVC {
         progressBarView.set(value: 0, startSecond: 0, endSecond: 0)
         playerLayer?.removeFromSuperlayer()
         recreateBackVideoView()
+        setupEpgButtonVisibility()
 
         let urlString = streams[currentIndex].url.absoluteString.replacingSuffixIfCan(of: ".ts", with: ".m3u8")
         guard let url = URL(string: urlString) else {
