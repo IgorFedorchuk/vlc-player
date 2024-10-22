@@ -14,7 +14,7 @@ let package = Package(
         ),
     ],
     dependencies: [
-        .package(url: "https://github.com/igorfedorchuk/vlckit-spm/", exact: "3.5.3"),
+        .package(url: "https://github.com/igorfedorchuk/vlckit-spm/", exact: "3.5.4"),
     ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
