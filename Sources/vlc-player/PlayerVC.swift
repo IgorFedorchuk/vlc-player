@@ -268,7 +268,7 @@ open class PlayerVC: UIViewController {
     public var onPreviousStream: ((Stream) -> Void)?
     public var onShareStream: ((Stream) -> String)?
     public var onEpgTapped: ((Stream) -> Void)?
-    public var onEpgChanged: ((Stream) -> Bool)?
+    public var onEpgChanged: ((Stream) -> Void)?
 
     public var onPipStarted: ((PipModel, [PlayerVC.Stream], Int) -> Void)?
 
@@ -1147,11 +1147,7 @@ extension PlayerVC {
     }
 
     private func setupEpgButtonVisibility() {
-        if let isEnable = onEpgChanged?(streams[currentIndex]) {
-            epgButton.isHidden = !isEnable
-        } else {
-            epgButton.isHidden = true
-        }
+        onEpgChanged?(streams[currentIndex])
     }
     
     private func setupPlayer() {

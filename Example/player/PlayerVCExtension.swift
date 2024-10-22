@@ -19,7 +19,7 @@ extension PlayerVC {
         playerVC.needShowEpgButton = true
 
         playerVC.onEpgChanged = { _ in
-            true
+            
         }
         playerVC.onFavoritePressed = { _ in
             true
