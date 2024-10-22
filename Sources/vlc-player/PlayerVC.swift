@@ -1259,12 +1259,14 @@ public extension PlayerVC {
         public let name: String
         public let id: String
         public var isFavorite: Bool
+        public let epgChannelId: String?
 
-        public init(url: URL, name: String, id: String, isFavorite: Bool) {
+        public init(url: URL, name: String, id: String, isFavorite: Bool, epgChannelId: String? = nil) {
             self.url = url
             self.name = name
             self.id = id
             self.isFavorite = isFavorite
+            self.epgChannelId = epgChannelId
         }
     }
 }
