@@ -16,7 +16,11 @@ extension PlayerVC {
         playerVC.needShowFavoriteButton = true
         playerVC.needShowShareButton = true
         playerVC.needShowLockOrientationButton = true
+        playerVC.needShowEpgButton = true
 
+        playerVC.onEpgChanged = { _ in
+            
+        }
         playerVC.onFavoritePressed = { _ in
             true
         }
@@ -25,6 +29,9 @@ extension PlayerVC {
         }
         playerVC.onPreviousStream = { stream in
             print("stream:\(stream)")
+        }
+        playerVC.onEpgTapped = { stream in
+            print("onEpgTapped stream:\(stream)")
         }
         playerVC.onError = { stream, error in
             let link = stream.url.absoluteString

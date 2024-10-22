@@ -125,6 +125,19 @@ open class PlayerVC: UIViewController {
         button.imageEdgeInsets = UIEdgeInsets(top: inset, left: inset, bottom: inset, right: inset)
         return button
     }()
+    
+    open var epgButton: UIButton = {
+        let button = UIButton(frame: CGRect.zero)
+        button.backgroundColor = .clear
+        button.tintColor = .white
+        button.setTitle("EPG", for: .normal)
+        button.titleLabel?.font = UIFont.systemFont(ofSize: 14)
+        button.setTitleColor(.white, for: .normal)
+        button.setTitleColor(.gray, for: .highlighted)
+        button.setTitleColor(.gray, for: .disabled)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        return button
+    }()
 
     open var playPauseButton: UIButton = {
         let button = UIButton(frame: CGRect.zero)
@@ -242,6 +255,7 @@ open class PlayerVC: UIViewController {
     open var needCloseOnPipPressed = false
     open var needShowFavoriteButton = false
     open var needShowShareButton = false
+    open var needShowEpgButton = false
     open var needShowLockOrientationButton = true
     open var isRotationLocked = false
     open var lockedOrientations = UIInterfaceOrientationMask.allButUpsideDown
@@ -253,6 +267,8 @@ open class PlayerVC: UIViewController {
     public var onNextStream: ((Stream) -> Void)?
     public var onPreviousStream: ((Stream) -> Void)?
     public var onShareStream: ((Stream) -> String)?
+    public var onEpgTapped: ((Stream) -> Void)?
+    public var onEpgChanged: ((Stream) -> Void)?
 
     public var onPipStarted: ((PipModel, [PlayerVC.Stream], Int) -> Void)?
 
@@ -262,7 +278,8 @@ open class PlayerVC: UIViewController {
     private var wasVLCStopped = false
     private var wasVLCFirstStopSkiped = false
 
-    private var vlcPlayer = VLCMediaPlayer()
+    private static var _vlcPlayer = VLCMediaPlayer()
+    private var vlcPlayer = _vlcPlayer
 
     private var playerItem: AVPlayerItem?
     private var player: AVPlayer?
@@ -739,7 +756,7 @@ extension PlayerVC {
         soundButton.rightAnchor.constraint(equalTo: playControlView.rightAnchor, constant: -16).isActive = true
         soundButton.topAnchor.constraint(equalTo: closeButton.topAnchor, constant: 0).isActive = true
     }
-
+    
     @objc private func soundButtonPressed() {
         startHideControlsTimer()
         player?.volume = player?.volume == 0 ? 1 : 0
@@ -748,6 +765,24 @@ extension PlayerVC {
         }
         setupSoundButtonImage()
     }
+    
+    private func setupEpgButton() {
+        guard needShowEpgButton else {
+            return
+        }
+        setupEpgButtonVisibility()
+        epgButton.addTarget(self, action: #selector(epgButtonPressed), for: .touchUpInside)
+        playControlView.addSubview(epgButton)
+        epgButton.widthAnchor.constraint(equalToConstant: constant.buttonWidth).isActive = true
+        epgButton.heightAnchor.constraint(equalToConstant: constant.buttonWidth).isActive = true
+        epgButton.rightAnchor.constraint(equalTo: playControlView.rightAnchor, constant: -16).isActive = true
+        epgButton.topAnchor.constraint(equalTo: soundButton.bottomAnchor, constant: 2).isActive = true
+    }
+    
+    @objc private func epgButtonPressed() {
+        onEpgTapped?(streams[currentIndex])
+    }
+    
 
     private func setupPlayControlViewColor() {
         playControlView.backgroundColor = isPlayControlHidden ? UIColor.clear : constant.backColor
@@ -900,13 +935,14 @@ extension PlayerVC {
         setupLockOrientationButton()
         setupShareButton()
         setupSoundButton()
+        setupEpgButton()
         setupErrorLabel()
         setupPlayForwardButton()
         setupPlayBackButton()
         setupNameLabel()
+        setupProgressBar()
         setupBrightnessSlider()
         setupVolumeSlider()
-        setupProgressBar()
     }
 
     private func setupProgressBar() {
@@ -1111,6 +1147,10 @@ extension PlayerVC {
         nameLabelTopConstraint?.constant = isLandscape ? constant.nameLabelTopIndentLandscape : constant.nameLabelTopIndentPortrait
     }
 
+    private func setupEpgButtonVisibility() {
+        onEpgChanged?(streams[currentIndex])
+    }
+    
     private func setupPlayer() {
         removePeriodicTimeObserver()
         removePlayerObservers()
@@ -1124,6 +1164,7 @@ extension PlayerVC {
         progressBarView.set(value: 0, startSecond: 0, endSecond: 0)
         playerLayer?.removeFromSuperlayer()
         recreateBackVideoView()
+        setupEpgButtonVisibility()
 
         let urlString = streams[currentIndex].url.absoluteString.replacingSuffixIfCan(of: ".ts", with: ".m3u8")
         guard let url = URL(string: urlString) else {
@@ -1227,12 +1268,14 @@ public extension PlayerVC {
         public let name: String
         public let id: String
         public var isFavorite: Bool
+        public let epgChannelId: String?
 
-        public init(url: URL, name: String, id: String, isFavorite: Bool) {
+        public init(url: URL, name: String, id: String, isFavorite: Bool, epgChannelId: String? = nil) {
             self.url = url
             self.name = name
             self.id = id
             self.isFavorite = isFavorite
+            self.epgChannelId = epgChannelId
         }
     }
 }
