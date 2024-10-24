@@ -278,7 +278,8 @@ open class PlayerVC: UIViewController {
     private var wasVLCStopped = false
     private var wasVLCFirstStopSkiped = false
 
-    private var vlcPlayer = VLCMediaPlayer()
+    private static var _vlcPlayer = VLCMediaPlayer()
+    private var vlcPlayer = _vlcPlayer
 
     private var playerItem: AVPlayerItem?
     private var player: AVPlayer?
