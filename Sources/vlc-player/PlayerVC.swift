@@ -9,7 +9,11 @@ import AVFoundation
 import AVKit
 import Foundation
 import MediaPlayer
+#if canImport(VLCKitSPM)
 import VLCKitSPM
+#elseif canImport(MobileVLCKit)
+import MobileVLCKit
+#endif
 
 open class PlayerVC: UIViewController {
     open var controlStackView: UIStackView = {
