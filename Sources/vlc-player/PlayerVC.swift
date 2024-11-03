@@ -10,9 +10,9 @@ import AVKit
 import Foundation
 import MediaPlayer
 #if canImport(VLCKitSPM)
-import VLCKitSPM
+    import VLCKitSPM
 #elseif canImport(MobileVLCKit)
-import MobileVLCKit
+    import MobileVLCKit
 #endif
 
 open class PlayerVC: UIViewController {
@@ -120,6 +120,15 @@ open class PlayerVC: UIViewController {
         return button
     }()
 
+    open var topStackView: UIStackView = {
+        let view = UIStackView(frame: CGRect.zero)
+        view.backgroundColor = .clear
+        view.spacing = 2
+        view.axis = .vertical
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
+    }()
+
     open var soundButton: UIButton = {
         let button = UIButton(frame: CGRect.zero)
         button.backgroundColor = .clear
@@ -129,7 +138,7 @@ open class PlayerVC: UIViewController {
         button.imageEdgeInsets = UIEdgeInsets(top: inset, left: inset, bottom: inset, right: inset)
         return button
     }()
-    
+
     open var epgButton: UIButton = {
         let button = UIButton(frame: CGRect.zero)
         button.backgroundColor = .clear
@@ -139,6 +148,17 @@ open class PlayerVC: UIViewController {
         button.setTitleColor(.white, for: .normal)
         button.setTitleColor(.gray, for: .highlighted)
         button.setTitleColor(.gray, for: .disabled)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        return button
+    }()
+
+    open var historyButton: UIButton = {
+        let button = UIButton(frame: CGRect.zero)
+        button.backgroundColor = .clear
+        button.tintColor = .white
+        button.setImage(UIImage(imageName: "history")?.withRenderingMode(.alwaysTemplate), for: .normal)
+        let inset = CGFloat(8)
+        button.imageEdgeInsets = UIEdgeInsets(top: inset, left: inset, bottom: inset, right: inset)
         button.translatesAutoresizingMaskIntoConstraints = false
         return button
     }()
@@ -172,33 +192,11 @@ open class PlayerVC: UIViewController {
         return button
     }()
 
-    open var shareButton: UIButton = {
+    open var settingsButton: UIButton = {
         let button = UIButton(frame: CGRect.zero)
         button.backgroundColor = .clear
         button.tintColor = .white
-        button.setImage(UIImage(imageName: "share")?.withRenderingMode(.alwaysTemplate), for: .normal)
-        let inset = CGFloat(8)
-        button.imageEdgeInsets = UIEdgeInsets(top: inset, left: inset, bottom: inset, right: inset)
-        button.translatesAutoresizingMaskIntoConstraints = false
-        return button
-    }()
-
-    open var favoriteButton: UIButton = {
-        let button = UIButton(frame: CGRect.zero)
-        button.backgroundColor = .clear
-        button.tintColor = .white
-        button.setImage(UIImage(imageName: "favorite")?.withRenderingMode(.alwaysTemplate), for: .normal)
-        let inset = CGFloat(8)
-        button.imageEdgeInsets = UIEdgeInsets(top: inset, left: inset, bottom: inset, right: inset)
-        button.translatesAutoresizingMaskIntoConstraints = false
-        return button
-    }()
-
-    open var lockOrientationButton: UIButton = {
-        let button = UIButton(frame: CGRect.zero)
-        button.backgroundColor = .clear
-        button.tintColor = .white
-        button.setImage(UIImage(imageName: "lock-orientation")?.withRenderingMode(.alwaysTemplate), for: .normal)
+        button.setImage(UIImage(imageName: "settings")?.withRenderingMode(.alwaysTemplate), for: .normal)
         let inset = CGFloat(8)
         button.imageEdgeInsets = UIEdgeInsets(top: inset, left: inset, bottom: inset, right: inset)
         button.translatesAutoresizingMaskIntoConstraints = false
@@ -260,6 +258,7 @@ open class PlayerVC: UIViewController {
     open var needShowFavoriteButton = false
     open var needShowShareButton = false
     open var needShowEpgButton = false
+    open var needShowHistoryButton = false
     open var needShowLockOrientationButton = true
     open var isRotationLocked = false
     open var lockedOrientations = UIInterfaceOrientationMask.allButUpsideDown
@@ -273,6 +272,8 @@ open class PlayerVC: UIViewController {
     public var onShareStream: ((Stream) -> String)?
     public var onEpgTapped: ((Stream) -> Void)?
     public var onEpgChanged: ((Stream) -> Void)?
+    public var onHistorySelected: ((Stream, Date) -> Void)?
+    public var onHistoryChanged: ((Stream) -> Void)?
 
     public var onPipStarted: ((PipModel, [PlayerVC.Stream], Int) -> Void)?
 
@@ -292,6 +293,7 @@ open class PlayerVC: UIViewController {
     private var pipModel: PipModel?
     private var pauseTimer: Timer?
     private var timeObserver: Timer?
+    private lazy var router = PlayerVC.Router(viewController: self)
 
     private var hideControlsTimer: Timer?
     private var streams: [PlayerVC.Stream]
@@ -421,8 +423,8 @@ open class PlayerVC: UIViewController {
         }
     }
 
-    open func startPlayer() {
-        setupPlayer()
+    open func startPlayer(url: URL? = nil) {
+        setupPlayer(url: url)
     }
 }
 
@@ -631,53 +633,54 @@ extension PlayerVC {
         airplayButton.widthAnchor.constraint(equalToConstant: constant.buttonWidth).isActive = true
     }
 
-    private func setupShareButton() {
-        shareButton.addTarget(self, action: #selector(shareButtonPressed), for: .touchUpInside)
-        if needShowShareButton {
-            controlStackView.addArrangedSubview(shareButton)
+    private func setupSettingsButton() {
+        settingsButton.addTarget(self, action: #selector(settingsButtonPressed), for: .touchUpInside)
+        controlStackView.addArrangedSubview(settingsButton)
+        settingsButton.widthAnchor.constraint(equalToConstant: constant.buttonWidth).isActive = true
+    }
+
+    private func favoriteButtonText() -> String? {
+        if needShowFavoriteButton {
+            return streams[currentIndex].isFavorite ? constant.removeFromFavoriteText : constant.addToFavoriteText
         }
-        shareButton.widthAnchor.constraint(equalToConstant: constant.buttonWidth).isActive = true
+        return nil
+    }
+
+    private func lockRotationButtonText() -> String? {
+        if needShowLockOrientationButton {
+            return isRotationLocked ? constant.unlockRotationText : constant.lockRotationText
+        }
+        return nil
+    }
+
+    @objc private func settingsButtonPressed() {
+        let shareButtonText = needShowShareButton ? constant.shareButtonTextText : nil
+        let settinsAlert = PlayerVC.SettinsAlert(shareButtonText: shareButtonText, onShare: { [weak self] in
+            self?.shareButtonPressed()
+        }, favoriteButtonText: favoriteButtonText(), onFavoriteTapped: { [weak self] in
+            self?.favoriteButtonPressed()
+        }, lockRotaionButtonText: lockRotationButtonText(), onLockRotaionTapped: { [weak self] in
+            self?.lockOrientationButtonPressed()
+        }, cancelText: constant.cancelButtonTextText, sourceView: settingsButton)
+
+        router.showSettings(settinsAlert: settinsAlert)
     }
 
     @objc private func shareButtonPressed() {
         let stream = streams[currentIndex]
         let sharedText = onShareStream?(stream) ?? stream.url.absoluteString
         let activityViewController = UIActivityViewController(activityItems: [sharedText], applicationActivities: nil)
-        activityViewController.popoverPresentationController?.sourceView = shareButton
+        activityViewController.popoverPresentationController?.sourceView = settingsButton
         present(activityViewController, animated: true, completion: nil)
-    }
-
-    private func setupFavoriteButton() {
-        setFavoriteButtonColor(streams[currentIndex].isFavorite)
-        favoriteButton.addTarget(self, action: #selector(favoriteButtonPressed), for: .touchUpInside)
-        if needShowFavoriteButton {
-            controlStackView.addArrangedSubview(favoriteButton)
-        }
-        favoriteButton.widthAnchor.constraint(equalToConstant: constant.buttonWidth).isActive = true
     }
 
     @objc private func favoriteButtonPressed() {
         let isFavorite = onFavoritePressed?(streams[currentIndex]) == true
         streams[currentIndex].isFavorite = isFavorite
-        setFavoriteButtonColor(isFavorite)
-    }
-
-    private func setFavoriteButtonColor(_ isFavorite: Bool) {
-        favoriteButton.tintColor = isFavorite ? constant.buttonActiveTintColor : .white
-    }
-
-    private func setupLockOrientationButton() {
-        if needShowLockOrientationButton {
-            lockOrientationButton.tintColor = isRotationLocked ? constant.buttonActiveTintColor : .white
-            lockOrientationButton.addTarget(self, action: #selector(lockOrientationButtonPressed), for: .touchUpInside)
-            controlStackView.addArrangedSubview(lockOrientationButton)
-            lockOrientationButton.widthAnchor.constraint(equalToConstant: constant.buttonWidth).isActive = true
-        }
     }
 
     @objc private func lockOrientationButtonPressed() {
         isRotationLocked = !isRotationLocked
-        lockOrientationButton.tintColor = isRotationLocked ? constant.buttonActiveTintColor : .white
         if isRotationLocked {
             var currentOrientation = UIApplication.shared.statusBarOrientation
             if #available(iOS 13.0, *) {
@@ -754,13 +757,11 @@ extension PlayerVC {
     private func setupSoundButton() {
         soundButton.setImage(UIImage(imageName: constant.soundOnImageName)?.withRenderingMode(.alwaysTemplate), for: .normal)
         soundButton.addTarget(self, action: #selector(soundButtonPressed), for: .touchUpInside)
-        playControlView.addSubview(soundButton)
+        topStackView.addArrangedSubview(soundButton)
         soundButton.widthAnchor.constraint(equalToConstant: constant.buttonWidth).isActive = true
         soundButton.heightAnchor.constraint(equalToConstant: constant.buttonWidth).isActive = true
-        soundButton.rightAnchor.constraint(equalTo: playControlView.rightAnchor, constant: -16).isActive = true
-        soundButton.topAnchor.constraint(equalTo: closeButton.topAnchor, constant: 0).isActive = true
     }
-    
+
     @objc private func soundButtonPressed() {
         startHideControlsTimer()
         player?.volume = player?.volume == 0 ? 1 : 0
@@ -769,24 +770,58 @@ extension PlayerVC {
         }
         setupSoundButtonImage()
     }
-    
+
+    private func setupTopStackView() {
+        playControlView.addSubview(topStackView)
+        topStackView.widthAnchor.constraint(equalToConstant: constant.buttonWidth).isActive = true
+        topStackView.rightAnchor.constraint(equalTo: playControlView.rightAnchor, constant: -16).isActive = true
+        topStackView.topAnchor.constraint(equalTo: closeButton.topAnchor, constant: 0).isActive = true
+
+        setupSoundButton()
+        setupEpgButton()
+    }
+
     private func setupEpgButton() {
         guard needShowEpgButton else {
             return
         }
         setupEpgButtonVisibility()
         epgButton.addTarget(self, action: #selector(epgButtonPressed), for: .touchUpInside)
-        playControlView.addSubview(epgButton)
+        topStackView.addArrangedSubview(epgButton)
         epgButton.widthAnchor.constraint(equalToConstant: constant.buttonWidth).isActive = true
         epgButton.heightAnchor.constraint(equalToConstant: constant.buttonWidth).isActive = true
-        epgButton.rightAnchor.constraint(equalTo: playControlView.rightAnchor, constant: -16).isActive = true
-        epgButton.topAnchor.constraint(equalTo: soundButton.bottomAnchor, constant: 2).isActive = true
     }
-    
+
     @objc private func epgButtonPressed() {
         onEpgTapped?(streams[currentIndex])
     }
-    
+
+    private func setupHistoryButtonVisibility() {
+        historyButton.isEnabled = streams[currentIndex].archiveInDays != nil
+        onHistoryChanged?(streams[currentIndex])
+    }
+
+    private func setupHistoryButton() {
+        guard needShowHistoryButton else {
+            return
+        }
+        setupHistoryButtonVisibility()
+        historyButton.addTarget(self, action: #selector(historyButtonPressed), for: .touchUpInside)
+        controlStackView.addArrangedSubview(historyButton)
+        historyButton.widthAnchor.constraint(equalToConstant: constant.buttonWidth).isActive = true
+        historyButton.heightAnchor.constraint(equalToConstant: constant.buttonWidth).isActive = true
+    }
+
+    @objc private func historyButtonPressed() {
+        guard let archiveInDays = streams[currentIndex].archiveInDays else {
+            return
+        }
+        let minimumDate = Calendar.current.dateNDays(days: archiveInDays) ?? Date()
+        router.showHistory(alert: ChooseDateAlert(title: constant.chooseDateText, okText: constant.okButtonTextText, onOk: { [weak self] date in
+            guard let self else { return }
+            onHistorySelected?(streams[currentIndex], date)
+        }, cancelText: constant.cancelButtonTextText, minimumDate: minimumDate))
+    }
 
     private func setupPlayControlViewColor() {
         playControlView.backgroundColor = isPlayControlHidden ? UIColor.clear : constant.backColor
@@ -853,7 +888,6 @@ extension PlayerVC {
             currentIndex = nextIndex
             isAvPlayerStoppedWithError = false
             setupPlayer()
-            setFavoriteButtonColor(streams[currentIndex].isFavorite)
         }
         setupPlayBackForwardButtonColor()
         onNextStream?(streams[currentIndex])
@@ -866,7 +900,6 @@ extension PlayerVC {
             currentIndex = nextIndex
             isAvPlayerStoppedWithError = false
             setupPlayer()
-            setFavoriteButtonColor(streams[currentIndex].isFavorite)
         }
         setupPlayBackForwardButtonColor()
         onPreviousStream?(streams[currentIndex])
@@ -935,11 +968,9 @@ extension PlayerVC {
         setupPlayPipButton()
         setupFullScreenButton()
         setupPauseTimerButton()
-        setupFavoriteButton()
-        setupLockOrientationButton()
-        setupShareButton()
-        setupSoundButton()
-        setupEpgButton()
+        setupHistoryButton()
+        setupSettingsButton()
+        setupTopStackView()
         setupErrorLabel()
         setupPlayForwardButton()
         setupPlayBackButton()
@@ -1154,8 +1185,8 @@ extension PlayerVC {
     private func setupEpgButtonVisibility() {
         onEpgChanged?(streams[currentIndex])
     }
-    
-    private func setupPlayer() {
+
+    private func setupPlayer(url: URL? = nil) {
         removePeriodicTimeObserver()
         removePlayerObservers()
         player?.pause()
@@ -1169,8 +1200,9 @@ extension PlayerVC {
         playerLayer?.removeFromSuperlayer()
         recreateBackVideoView()
         setupEpgButtonVisibility()
+        setupHistoryButtonVisibility()
 
-        let urlString = streams[currentIndex].url.absoluteString.replacingSuffixIfCan(of: ".ts", with: ".m3u8")
+        let urlString = url?.absoluteString ?? streams[currentIndex].url.absoluteString.replacingSuffixIfCan(of: ".ts", with: ".m3u8")
         guard let url = URL(string: urlString) else {
             proccessError()
             return
@@ -1234,52 +1266,6 @@ extension PlayerVC: VLCMediaPlayerDelegate {
             setupPlayPauseImage(true)
         default:
             loader.stopAnimating()
-        }
-    }
-}
-
-public extension PlayerVC {
-    struct Constant {
-        public var hideControlsTimeInterval: CGFloat = 10.0
-        public var playButtonWidth: CGFloat = 60
-        public var buttonWidth: CGFloat = 40
-        public var buttonsIndent: CGFloat = 10
-        public var playButtonIndent: CGFloat = 80
-        public var buttonsTopIndentPortrait: CGFloat = 50
-        public var buttonsTopIndentLandscape: CGFloat = 10
-        public var nameLabelTopIndentPortrait: CGFloat = 60
-        public var nameLabelTopIndentLandscape: CGFloat = 20
-        public var sliderIndentPortrait: CGFloat = 90
-        public var sliderIndentLandscape: CGFloat = 0
-        public var preferredTimescale: CMTimeScale = 600
-        public var pauseImageName = "pause"
-        public var playImageName = "play"
-        public var soundOnImageName = "sound-on"
-        public var soundOffImageName = "sound-off"
-        public var outputVolume = "outputVolume"
-        public var backColor = UIColor.color(r: 0, g: 0, b: 0, a: 0.2)
-        public var defaultCountDownDuration = 60 * 20
-        public var timerTitle = "Pause playback after"
-        public var timerCancelButtonText = "Cancel"
-        public var timerOkButtonText = "Start"
-        public var timerStopButtonText = "Stop"
-        public var errorText = NSLocalizedString("Video is unreachable", comment: "")
-        public var buttonActiveTintColor = UIColor.red
-    }
-
-    struct Stream {
-        public let url: URL
-        public let name: String
-        public let id: String
-        public var isFavorite: Bool
-        public let epgChannelId: String?
-
-        public init(url: URL, name: String, id: String, isFavorite: Bool, epgChannelId: String? = nil) {
-            self.url = url
-            self.name = name
-            self.id = id
-            self.isFavorite = isFavorite
-            self.epgChannelId = epgChannelId
         }
     }
 }
