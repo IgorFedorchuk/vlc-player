@@ -10,13 +10,11 @@ import vlc_player
 
 class ViewController: UIViewController {
     private var streams: [PlayerVC.Stream] {
-        return [PlayerVC.Stream(url: URL(string: "https://live-par-2-abr.livepush.io/vod/bigbuckbunnyclip.mp4")!, name: "Stream 1", id: "1", isFavorite: false),
-                PlayerVC.Stream(url: URL(string: "http://b0b4d514.amazzin.pw/iptv/V7CS89BDUTXR3K/11065/index.m3u8")!, name: "Stream 2", id: "2", isFavorite: false),
-                PlayerVC.Stream(url: URL(string: "http://184585.ipturk.eu/BektasCoban/69bNAepa4G8y/241346")!, name: "Stream 3", id: "3", isFavorite: true)]
+        return [PlayerVC.Stream(url: URL(string: "https://live-par-2-abr.livepush.io/vod/bigbuckbunnyclip.mp4")!, name: "Stream 1", id: "1", isFavorite: false, archiveInDays: nil),
+                PlayerVC.Stream(url: URL(string: "http://b9044e37.ucomist.net/iptv/YRC9XZGMZSC2QP/523/index.m3u8")!, name: "Stream 2", id: "2", isFavorite: false, archiveInDays: 2),
+                PlayerVC.Stream(url: URL(string: "http://184585.ipturk.eu/BektasCoban/69bNAepa4G8y/241346")!, name: "Stream 3", id: "3", isFavorite: true, archiveInDays: 3)]
     }
 
-//
-    // http://184585.ipturk.eu/BektasCoban/69bNAepa4G8y/241540
     override func viewDidLoad() {
         super.viewDidLoad()
     }
