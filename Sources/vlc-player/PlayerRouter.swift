@@ -24,6 +24,7 @@ extension PlayerVC {
 
     struct ChooseDateAlert {
         var title = ""
+        var subtitle = ""
         var okText = ""
         var onOk: (Date) -> Void
         var cancelText = ""
@@ -71,7 +72,7 @@ extension PlayerVC {
         }
 
         func showHistory(alert: ChooseDateAlert) {
-            let alertController = UIAlertController.aletController(title: alert.title, message: nil)
+            let alertController = UIAlertController.aletController(title: alert.title, message: alert.subtitle)
             let datePicker = UIDatePicker()
             datePicker.locale = Locale.current
             datePicker.maximumDate = Date()

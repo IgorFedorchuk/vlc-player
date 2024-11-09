@@ -814,11 +814,11 @@ extension PlayerVC {
     }
 
     @objc private func historyButtonPressed() {
-        guard let archiveInDays = streams[currentIndex].archiveInDays else {
+        guard let archiveInDays = streams[currentIndex].archiveInDays,
+        let minimumDate = Calendar.current.dateNDays(days: archiveInDays) else {
             return
         }
-        let minimumDate = Calendar.current.dateNDays(days: archiveInDays) ?? Date()
-        router.showHistory(alert: ChooseDateAlert(title: constant.chooseDateText, okText: constant.okButtonTextText, onOk: { [weak self] date in
+        router.showHistory(alert: ChooseDateAlert(title: constant.broadcastArchiveText, subtitle: constant.chooseDateText, okText: constant.okButtonTextText, onOk: { [weak self] date in
             guard let self else { return }
             onHistorySelected?(streams[currentIndex], date)
         }, cancelText: constant.cancelButtonTextText, minimumDate: minimumDate))
