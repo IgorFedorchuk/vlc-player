@@ -49,3 +49,6 @@ playerVC.onPreviousStream = { stream in
 }
 present(playerVC, animated: true)
 ```
+
+# Push new version to CocoaPods
+pod trunk push vlc-player.podspec   

@@ -797,7 +797,8 @@ extension PlayerVC {
     }
 
     private func setupHistoryButtonVisibility() {
-        historyButton.isEnabled = streams[currentIndex].archiveInDays != nil
+        let archiveInDays = streams[currentIndex].archiveInDays
+        historyButton.isEnabled = archiveInDays != nil && archiveInDays! > 0
         onHistoryChanged?(streams[currentIndex])
     }
 

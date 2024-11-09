@@ -41,7 +41,7 @@ public extension PlayerVC {
         public var removeFromFavoriteText = "Remove from favorites"
         public var lockRotationText = "Lock rotation"
         public var unlockRotationText = "Unlock rotation"
-        public var chooseDateText = "Choose date"
+        public var chooseDateText = "Select archive date"
         public var errorText = NSLocalizedString("Video is unreachable", comment: "")
         public var buttonActiveTintColor = UIColor.red
     }

@@ -71,7 +71,7 @@ extension PlayerVC {
         }
 
         func showHistory(alert: ChooseDateAlert) {
-            let alertController = UIAlertController(title: alert.title, message: nil, preferredStyle: .alert)
+            let alertController = UIAlertController.aletController(title: alert.title, message: nil)
             let datePicker = UIDatePicker()
             datePicker.locale = Locale.current
             datePicker.maximumDate = Date()
