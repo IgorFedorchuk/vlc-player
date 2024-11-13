@@ -283,8 +283,7 @@ open class PlayerVC: UIViewController {
     private var wasVLCStopped = false
     private var wasVLCFirstStopSkiped = false
 
-    private static var _vlcPlayer = VLCMediaPlayer()
-    private var vlcPlayer = _vlcPlayer
+    private var vlcPlayer = VLCMediaPlayer()
 
     private var playerItem: AVPlayerItem?
     private var player: AVPlayer?
@@ -815,7 +814,8 @@ extension PlayerVC {
 
     @objc private func historyButtonPressed() {
         guard let archiveInDays = streams[currentIndex].archiveInDays,
-        let minimumDate = Calendar.current.dateNDays(days: archiveInDays) else {
+              let minimumDate = Calendar.current.dateNDays(days: archiveInDays)
+        else {
             return
         }
         router.showHistory(alert: ChooseDateAlert(title: constant.broadcastArchiveText, subtitle: constant.chooseDateText, okText: constant.okButtonTextText, onOk: { [weak self] date in
