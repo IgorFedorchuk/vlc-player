@@ -7,38 +7,59 @@
 
 import UIKit
 
-extension PlayerVC {
+public extension PlayerVC {
     struct SettinsAlert {
-        var shareButtonText: String?
-        var onShare: () -> Void
+        public var shareButtonText: String?
+        public var onShare: () -> Void
 
-        var favoriteButtonText: String?
-        var onFavoriteTapped: () -> Void
+        public var favoriteButtonText: String?
+        public var onFavoriteTapped: () -> Void
 
-        var lockRotaionButtonText: String?
-        var onLockRotaionTapped: () -> Void
+        public var lockRotaionButtonText: String?
+        public var onLockRotaionTapped: () -> Void
 
-        var cancelText: String
-        var sourceView: UIView?
+        public var cancelText: String
+        public var sourceView: UIView?
+
+        public init(shareButtonText: String?, onShare: @escaping () -> Void, favoriteButtonText: String?, onFavoriteTapped: @escaping () -> Void, lockRotaionButtonText: String?, onLockRotaionTapped: @escaping () -> Void, cancelText: String, sourceView: UIView?) {
+            self.shareButtonText = shareButtonText
+            self.onShare = onShare
+            self.favoriteButtonText = favoriteButtonText
+            self.onFavoriteTapped = onFavoriteTapped
+            self.lockRotaionButtonText = lockRotaionButtonText
+            self.onLockRotaionTapped = onLockRotaionTapped
+            self.cancelText = cancelText
+            self.sourceView = sourceView
+        }
     }
 
     struct ChooseDateAlert {
-        var title = ""
-        var subtitle = ""
-        var okText = ""
-        var onOk: (Date) -> Void
-        var cancelText = ""
-        var minimumDate: Date
+        public var title = ""
+        public var subtitle = ""
+        public var okText = ""
+        public var onOk: (Date) -> Void
+        public var cancelText = ""
+        public var minimumDate: Date
+        public var startDate = Date()
+
+        public init(title: String, subtitle: String, okText: String, onOk: @escaping (Date) -> Void, cancelText: String, minimumDate: Date) {
+            self.title = title
+            self.subtitle = subtitle
+            self.okText = okText
+            self.onOk = onOk
+            self.cancelText = cancelText
+            self.minimumDate = minimumDate
+        }
     }
 
     class Router {
         private weak var viewController: UIViewController?
 
-        init(viewController: UIViewController) {
+        public init(viewController: UIViewController) {
             self.viewController = viewController
         }
 
-        func showSettings(settinsAlert: SettinsAlert) {
+        public func showSettings(settinsAlert: SettinsAlert) {
             let alertController = UIAlertController.actionSheetController(title: nil, message: nil)
             if let shareButtonText = settinsAlert.shareButtonText {
                 let action = UIAlertAction(title: shareButtonText, style: .default, handler: { _ in
@@ -71,10 +92,11 @@ extension PlayerVC {
             viewController?.present(alertController, animated: true)
         }
 
-        func showHistory(alert: ChooseDateAlert) {
+        public func showHistory(alert: ChooseDateAlert) {
             let alertController = UIAlertController.aletController(title: alert.title, message: alert.subtitle)
             let datePicker = UIDatePicker()
             datePicker.locale = Locale.current
+            datePicker.date = alert.startDate
             datePicker.maximumDate = Date()
             datePicker.minimumDate = alert.minimumDate
             datePicker.datePickerMode = .dateAndTime
