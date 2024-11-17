@@ -1239,8 +1239,29 @@ extension PlayerVC {
 }
 
 extension PlayerVC: VLCMediaPlayerDelegate {
-    public func mediaPlayerStateChanged(_: Notification) {
-        switch vlcPlayer.state {
+    public func mediaPlayerStateChanged(_ newState: VLCMediaPlayerState) {
+        DispatchQueue.main.async {
+            self.vlcPlayerStateChanged(newState: newState)
+        }
+    }
+    
+    public func mediaPlayerTrackAdded(_ trackId: String, with trackType: VLCMedia.TrackType) {
+        print("mediaPlayerTrackAdded trackId \(trackId)")
+        print("trackType \(trackType)")
+    }
+    
+    public func mediaPlayerTrackRemoved(_ trackId: String, with trackType: VLCMedia.TrackType) {
+        print("mediaPlayerTrackRemoved trackId \(trackId)")
+        print("trackType \(trackType)")
+    }
+    
+    public func mediaPlayerTrackUpdated(_ trackId: String, with trackType: VLCMedia.TrackType) {
+        print("mediaPlayerTrackUpdated trackId \(trackId)")
+        print("trackType \(trackType)")
+    }
+    
+    private func vlcPlayerStateChanged(newState: VLCMediaPlayerState) {
+        switch newState {
         case .paused:
             setupPlayPauseImage(true)
             loader.stopAnimating()
