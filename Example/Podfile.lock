@@ -1,0 +1,28 @@
+PODS:
+  - vlc-player (1.1.7):
+    - VLCKit (= 4.0.0a6)
+    - VLCMediaLibraryKit (= 0.13.0a6)
+  - VLCKit (4.0.0a6)
+  - VLCMediaLibraryKit (0.13.0a6):
+    - VLCKit (>= 4.0.0a3)
+
+DEPENDENCIES:
+  - vlc-player (from `../`)
+
+SPEC REPOS:
+  trunk:
+    - VLCKit
+    - VLCMediaLibraryKit
+
+EXTERNAL SOURCES:
+  vlc-player:
+    :path: "../"
+
+SPEC CHECKSUMS:
+  vlc-player: c3b8d96e76376c282d15c82f4f55f214887823b3
+  VLCKit: 80332c6fbe83e9278aca1b7e27799f2b521a7f76
+  VLCMediaLibraryKit: d6e0f9def251a0b742c15e54dd6b826dfa931349
+
+PODFILE CHECKSUM: 1172f05252b3e0d32b8cf754ab2bb5b9b8344cf5
+
+COCOAPODS: 1.15.2

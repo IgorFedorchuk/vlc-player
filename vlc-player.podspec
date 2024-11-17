@@ -15,6 +15,6 @@ Pod::Spec.new do |s|
   s.source_files  = 'Sources/**/*.{swift,h,m}'
   s.resources     = 'Sources/vlc-player/Resources/**/*'
 
-  s.dependency 'MobileVLCKit', '3.6.0'
+  s.dependency 'VLCKit', '4.0.0a6'
+  s.dependency 'VLCMediaLibraryKit', '0.13.0a6'
 end
-

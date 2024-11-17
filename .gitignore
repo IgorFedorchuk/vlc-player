@@ -19,6 +19,8 @@
 
 #other
 
+Example/Pods/*
+
 .DS_Store
 .idea/
 AutoMockable.generated.swift

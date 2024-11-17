@@ -11,8 +11,8 @@ import Foundation
 import MediaPlayer
 #if canImport(VLCKitSPM)
     import VLCKitSPM
-#elseif canImport(MobileVLCKit)
-    import MobileVLCKit
+#elseif canImport(VLCKit)
+    import VLCKit
 #endif
 
 open class PlayerVC: UIViewController {

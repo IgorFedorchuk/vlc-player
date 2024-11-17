@@ -16,10 +16,11 @@
 		774DCBDF2BC29AF800A50D7C /* PipService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 774DCBDE2BC29AF800A50D7C /* PipService.swift */; };
 		774DCBE12BC29B6700A50D7C /* PlayerVCExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 774DCBE02BC29B6700A50D7C /* PlayerVCExtension.swift */; };
 		774DCBE32BC29BDD00A50D7C /* UIViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 774DCBE22BC29BDD00A50D7C /* UIViewController.swift */; };
-		77B770D92BC47A38005D3E6B /* vlc-player in Frameworks */ = {isa = PBXBuildFile; productRef = 77B770D82BC47A38005D3E6B /* vlc-player */; };
+		BA9BDD60A692CD6C860A4C81 /* Pods_player.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D8ED207C332F4FA03FAA4927 /* Pods_player.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		222A274D75CE73D139784FDB /* Pods-player.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-player.debug.xcconfig"; path = "Target Support Files/Pods-player/Pods-player.debug.xcconfig"; sourceTree = "<group>"; };
 		774DCBB32BC294EB00A50D7C /* player.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = player.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		774DCBB62BC294EB00A50D7C /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		774DCBB82BC294EB00A50D7C /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
@@ -31,7 +32,8 @@
 		774DCBDE2BC29AF800A50D7C /* PipService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PipService.swift; sourceTree = "<group>"; };
 		774DCBE02BC29B6700A50D7C /* PlayerVCExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerVCExtension.swift; sourceTree = "<group>"; };
 		774DCBE22BC29BDD00A50D7C /* UIViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIViewController.swift; sourceTree = "<group>"; };
-		77B770D62BC47A29005D3E6B /* vlc-player */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = "vlc-player"; path = ..; sourceTree = "<group>"; };
+		D8ED207C332F4FA03FAA4927 /* Pods_player.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_player.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		E7D2DAD452DDA63154027A99 /* Pods-player.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-player.release.xcconfig"; path = "Target Support Files/Pods-player/Pods-player.release.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -39,7 +41,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				77B770D92BC47A38005D3E6B /* vlc-player in Frameworks */,
+				BA9BDD60A692CD6C860A4C81 /* Pods_player.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -49,10 +51,10 @@
 		774DCBAA2BC294EB00A50D7C = {
 			isa = PBXGroup;
 			children = (
-				77B770D62BC47A29005D3E6B /* vlc-player */,
 				774DCBB52BC294EB00A50D7C /* player */,
 				774DCBB42BC294EB00A50D7C /* Products */,
 				77B770D72BC47A38005D3E6B /* Frameworks */,
+				94125E75AE7A5D6DD85A89B6 /* Pods */,
 			);
 			sourceTree = "<group>";
 		};
@@ -84,8 +86,18 @@
 		77B770D72BC47A38005D3E6B /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				D8ED207C332F4FA03FAA4927 /* Pods_player.framework */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		94125E75AE7A5D6DD85A89B6 /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				222A274D75CE73D139784FDB /* Pods-player.debug.xcconfig */,
+				E7D2DAD452DDA63154027A99 /* Pods-player.release.xcconfig */,
+			);
+			path = Pods;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -95,9 +107,11 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 774DCBC72BC294EB00A50D7C /* Build configuration list for PBXNativeTarget "player" */;
 			buildPhases = (
+				A4DFCDD8F9B0EFA396CA27FA /* [CP] Check Pods Manifest.lock */,
 				774DCBAF2BC294EB00A50D7C /* Sources */,
 				774DCBB02BC294EB00A50D7C /* Frameworks */,
 				774DCBB12BC294EB00A50D7C /* Resources */,
+				34F3F0EBB9CE5D8E653D9F68 /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -105,7 +119,6 @@
 			);
 			name = player;
 			packageProductDependencies = (
-				77B770D82BC47A38005D3E6B /* vlc-player */,
 			);
 			productName = player;
 			productReference = 774DCBB32BC294EB00A50D7C /* player.app */;
@@ -135,8 +148,6 @@
 				Base,
 			);
 			mainGroup = 774DCBAA2BC294EB00A50D7C;
-			packageReferences = (
-			);
 			productRefGroup = 774DCBB42BC294EB00A50D7C /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -158,6 +169,48 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		34F3F0EBB9CE5D8E653D9F68 /* [CP] Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-player/Pods-player-frameworks-${CONFIGURATION}-input-files.xcfilelist",
+			);
+			name = "[CP] Embed Pods Frameworks";
+			outputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-player/Pods-player-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-player/Pods-player-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		A4DFCDD8F9B0EFA396CA27FA /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-player-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		774DCBAF2BC294EB00A50D7C /* Sources */ = {
@@ -316,12 +369,14 @@
 		};
 		774DCBC82BC294EB00A50D7C /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 222A274D75CE73D139784FDB /* Pods-player.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = K3X423KTZ7;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = player/Info.plist;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -335,7 +390,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.if.player;
+				PRODUCT_BUNDLE_IDENTIFIER = com.if.playerdevelop;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -345,12 +400,14 @@
 		};
 		774DCBC92BC294EB00A50D7C /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = E7D2DAD452DDA63154027A99 /* Pods-player.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = K3X423KTZ7;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = player/Info.plist;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -364,7 +421,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.if.player;
+				PRODUCT_BUNDLE_IDENTIFIER = com.if.playerdevelop;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -394,13 +451,6 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
-
-/* Begin XCSwiftPackageProductDependency section */
-		77B770D82BC47A38005D3E6B /* vlc-player */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = "vlc-player";
-		};
-/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 774DCBAB2BC294EB00A50D7C /* Project object */;
 }
