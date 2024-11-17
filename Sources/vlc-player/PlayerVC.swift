@@ -1194,12 +1194,10 @@ extension PlayerVC {
         player = nil
         playerItem = nil
         vlcPlayer.stop()
-        vlcPlayer.drawable = nil
         wasVLCStopped = false
         wasVLCFirstStopSkiped = false
         progressBarView.set(value: 0, startSecond: 0, endSecond: 0)
         playerLayer?.removeFromSuperlayer()
-        recreateBackVideoView()
         setupEpgButtonVisibility()
         setupHistoryButtonVisibility()
 
