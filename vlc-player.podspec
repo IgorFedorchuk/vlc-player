@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name         = 'vlc-player'
-  s.version      = '1.1.7'
+  s.version      = '1.1.8'
   s.summary      = 'Stream player'
   s.description  = <<-DESC
                     vlc-player is a lightweight and modular library written in Swift.
@@ -15,6 +15,6 @@ Pod::Spec.new do |s|
   s.source_files  = 'Sources/**/*.{swift,h,m}'
   s.resources     = 'Sources/vlc-player/Resources/**/*'
 
-  s.dependency 'MobileVLCKit', '3.6.0'
+  s.dependency 'MobileVLCKit', '3.6.1b1'
 end
 
